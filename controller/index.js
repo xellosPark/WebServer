@@ -76,39 +76,52 @@ const accessToken = (req, res) => {
 const refreshToken = (req, res) => {
     //access token 갱신
      try {
-    //     const token = req.cookies.refreshToken;
-    //     const data = jwt.verify(token, process.env.REFRESH_SECRET);
-    //     const userData = userDatabase.filter(item => {
-    //         return item.email === data.email;
-    //     })[0]
+         const token = req.cookies.refreshToken;
+         const data = jwt.verify(token, process.env.REFRESH_SECRET);
+         const userData = userDatabase.filter(item => {
+             return item.email === data.email;
+         })[0]
+         //access token 새로 발급
+         const accessToken = jwt.sign({
+            id:userData.id,
+            username: userData.username,
+            email: userData.email,
+         }, process.env.ACCESS_SECRET, {
+            expiresIn: '1m',
+            issuer: 'About Tech',
+         });
 
-    //     //access token 새로 발급
+         res.cookie('accessToken', accessToken, {
+            secure:false,
+            httpOnly:true,
+         });
+         res.status(200).json("Access Token Recreated");
 
      } catch (error) {
-        
+        res.status(500).json(error);
      }
 }
 
 const loginSucess = (req, res) => {
-    // try {
-    //     const token = req.cookies.accessToken;
-    //     const data = jwt.verify(token, process.env.ACCESS_SECRET);
-    //     const userData = userDatabase.filter(item => {
-    //         return item.email === data.email;
-    //     })[0];
-    //     res.status(200).json(userData);
-    // } catch (error) {
-    //     res.status(500).json(error);
-    // }
+     try {
+         const token = req.cookies.accessToken;
+         const data = jwt.verify(token, process.env.ACCESS_SECRET);
+         const userData = userDatabase.filter(item => {
+             return item.email === data.email;
+         })[0];
+         res.status(200).json(userData);
+     } catch (error) {
+         res.status(500).json(error);
+     }
 };
 
 const logout = (req, res) => {
-    // try {
-    //     res.cookie('accessToken', '');
-    //     res.status(200).json("Logout Success");
-    // } catch (error) {
-    //     res.status(500).json(error);
-    // }
+     try {
+         res.cookie('accessToken', '');
+         res.status(200).json("Logout Success");
+     } catch (error) {
+         res.status(500).json(error);
+     }
 }
 
 module.exports = {
