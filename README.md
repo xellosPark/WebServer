@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# WebServer
-=======
 설치 목록
 npm i express nodemon dotenv cors jsonwebtoken cookie-parser
 npm install concurrently
@@ -33,4 +30,3 @@ console.log(usersWithGivenEmail);
     { id: 4, username: 'user4', email: 'common@example.com', password: 'password4' }
 ]
 //////////////////////////////////////////
->>>>>>> d13ff82 (Server Start)
