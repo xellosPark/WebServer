@@ -1,26 +1,18 @@
-module.exports = [
-    {
-        id : 1,
-        username : 'testuser1',
-        email : 'testuser1@gmail.com',
-        password : '1111'
-    },
-    {
-        id : 2,
-        username : 'testuser2',
-        email : 'testuser2@gmail.com',
-        password : '2222'
-    },
-    {
-        id : 3,
-        username : 'testuser3',
-        email : 'testuser3@gmail.com',
-        password : '3333'
-    },
-    {
-        id : 4,
-        username : 'testuser4',
-        email : 'testuser4@gmail.com',
-        password : '4444'
-    },
-]
+const sqlite3 = require('sqlite3').verbose();
+
+let db;
+
+function connectDatabase() {
+    if (!db) {
+        db = new sqlite3.Database('./DB/ubisamdb.db', sqlite3.OPEN_READWRITE, (err) => {
+            if (err) {
+                console.error(err.message);
+                throw err;
+            }
+            console.log('Connected to the SQLite database.');
+        });
+    }
+    return db;
+}
+
+module.exports = connectDatabase();

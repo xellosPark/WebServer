@@ -1,4 +1,5 @@
 const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
@@ -9,19 +10,36 @@ const {
     loginSucess,
     logout,
     contactus,
+    dbconnect,
 } = require('./controller/index');
 
 const app = express();
 dotenv.config();
+
+// 데이터베이스 연결 초기화
+const db = require('./Database');
+
+
+process.on('SIGINT', () => {
+    db.close((err) => {
+        if (err) {
+            console.error(err.message);
+        }
+        console.log('Close the database connection.');
+        process.exit(0);
+    });
+});
+
+
 
 //기본설정
 app.use(express.json());
 app.use(cookieParser());
 app.use(
     cors({
-        origin : 'http://localhost:3000',
-        methods : ['GET', 'POST', 'DELETE', 'PUT'],
-        credentials : true,
+        origin: 'http://localhost:3000',
+        methods: ['GET', 'POST', 'DELETE', 'PUT'],
+        credentials: true,
     })
 );
 
@@ -31,6 +49,7 @@ app.get('/refreshtoken', refreshToken);
 app.get('/login/success', loginSucess);
 app.post('/logout', logout);
 app.get('/ContactUs', contactus);
+//app.get('/data', dbconnect);
 
 app.get('/api/data', (req, res) => {
     res.json({
