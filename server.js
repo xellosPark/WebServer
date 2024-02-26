@@ -8,6 +8,7 @@ const {
     refreshToken,
     loginSucess,
     logout,
+    contactus,
 } = require('./controller/index');
 
 const app = express();
@@ -29,6 +30,7 @@ app.get('/accesstoken', accessToken);
 app.get('/refreshtoken', refreshToken);
 app.get('/login/success', loginSucess);
 app.post('/logout', logout);
+app.get('/ContactUs', contactus);
 
 app.get('/api/data', (req, res) => {
     res.json({
