@@ -1,6 +1,7 @@
 설치 목록
 npm i express nodemon dotenv cors jsonwebtoken cookie-parser
 npm install concurrently
+//.env 파일을 사용하려면 dotenv 패키지를 설치하고 애플리케이션에서 사용해야 합니다.
 
 package.json 추가 항목
 "start": "concurrently \"react-scripts start\" \"node server.js\"",

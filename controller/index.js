@@ -1,35 +1,70 @@
 const db = require('../Database');
 const jwt = require("jsonwebtoken");
+const dotenv = require('dotenv');
+
+dotenv.config();
+const crypto = require('crypto');
+const ACCESS_SECRET = "1234";
+const REFRESH_SECRET = "1234";
+
+// 동적으로 SECRET_KEY 생성
+const SECRET_KEY = crypto.randomBytes(64).toString('hex');
+
+
+
 
 const login = (req, res, next) => {
-    //res.send('Hello World');
-    //클라이언트에서 보내는 정보가(req.body) email이라면 DB전까지 무조건 변수로 사용되야함
-    const {email, password} = req.body;
+    console.log('로그인 시도');
+    const { email, password } = req.body;
 
-    console.log(`111 ${req.body}`);
-    console.log(`222 ${email}, ${password}`);
-
+    // 데이터베이스에서 사용자 조회 (가정)
     const sql = 'SELECT * FROM UserInfo WHERE user_mail = ?';
-    //const로 정의된 email 쿼리이므로 email그대로 사용(DB에서만 해당 컬럼 사용)
-    db.get(sql, [email], (err, row) => {
+    db.get(sql, [email], (err, user) => {
         if (err) {
-            res.status(400).json({ error: '사용자 조회 중 오류가 발생했습니다.' });
-            return;
+            console.error('사용자 조회 중 오류 발생:', err);
+            return res.status(400).json({ error: '사용자 조회 중 오류가 발생했습니다.' });
         }
-        // 로그인 로직 처리...
-        console.log(row);
-        //이 이후 row는 DB값이므로 DB의 컬럼값으로 표시해야됨
-        if (row && email === row.user_mail) { // 비밀번호 비교는 해시를 사용한 보안 방식으로 대체되어야 합니다.
-            // 사용자 인증에 성공한 경우, 예시로 사용자 정보와 함께 응답을 보냅니다.
-            // 실제 애플리케이션에서는 비밀번호와 같은 민감한 정보를 제외해야 합니다.
-            res.status(200).json({
-                message: "로그인 성공"
+
+        if (!user) {
+            console.log('사용자를 찾을 수 없음');
+            return res.status(403).json("Not Authorized");
+        }
+
+        // 비밀번호 검증 로직 필요 (생략)
+
+        try {
+            const accessToken = jwt.sign(
+                { id: user.user_mail },
+                ACCESS_SECRET,
+                { expiresIn: '1m', issuer: 'yourIssuer' }
+            );
+
+            const refreshToken = jwt.sign(
+                { id: user.user_mail },
+                REFRESH_SECRET,
+                { expiresIn: '24h', issuer: 'yourIssuer' }
+            );
+
+            global.refreshTokens[refreshToken] = email;
+
+            // 쿠키에 토큰 저장 및 응답 전송
+            res.cookie('accessToken', accessToken, { httpOnly: true, secure: true });
+            res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
+            console.log('토큰 발급 완료');
+
+            return res.status(200).json({
+                code: 200,
+                message: '토큰 발급 완료',
+                accessToken,
+                refreshToken
             });
-        } else {
-            // 비밀번호가 일치하지 않거나 사용자를 찾을 수 없는 경우
-            res.status(401).json({ error: '인증 실패' });
+        } catch (error) {
+            console.error('토큰 생성 중 오류:', error);
+            return res.status(500).json({ error: '토큰 생성 중 서버 오류 발생' });
         }
     });
+};
+    
     //const userInfo = userDatabase.filter(item => {
     //    return item.email === email;
     //})[0];//맞는 데이터 중 첫번째 요소 가져옴
@@ -38,62 +73,28 @@ const login = (req, res, next) => {
     //next();//미들웨어 실행을 위해 필요
 
     
-
-
-
-    // if (!userDatabase) {
-    //     res.status(403).json("Not Authorized")
-    // } else {
-    //     try {
-    // //         // access Token 발급
-    //         const accessToken = jwt.sign({
-    //             id : userInfo.id,
-    //             username : userInfo.username,
-    //             email : userInfo.email,
-    //         }, process.env.ACCESS_SECRET, {
-    //             expiresIn : '5m',
-    //             issuer : 'About Tech',
-    //         });//마지막 인자 : 토근 유지 시간과 정보 등등
-
-    // //         // refresh Token 발급
-    //         const refreshToken = jwt.sign({
-    //             id : userInfo.id,
-    //             username : userInfo.username,
-    //             email : userInfo.email,
-    //         }, process.env.REFRESH_SECRET, {
-    //              expiresIn : '24h', //accessToken을 갱신하기 위한 토큰으로 accessToken보다 시간 길어야함
-    //             issuer : 'About Tech',
-    //         });
-
-    // //         //token 전송
-    //         res.cookie("accessToken", accessToken, {
-    //             secure : false,
-    //             httpOnly : true,
-    //         })
-
-    //         res.cookie("refreshToken", refreshToken, {
-    //             secure : false,
-    //             httpOnly : true,
-    //         })
-
-    //         res.status(200).json("login success");
-    //     } catch (error) {
-    //         res.status(500).json(error);
-    //     }
-    // }
-};
-
+//액세스 토큰의 유효 기간. 유효 기간은 24시간(86400초)
 const accessToken = (req, res) => {
     try {
-        const token = req.cookies.accessToken;
-        const data = jwt.verify(token, process.env.ACCESS_SECRET);
+        //const token = req.cookies.accessToken;
+        const token = req.headers['accessToken'];
+        //const data = jwt.verify(token, process.env.ACCESS_SECRET);
+        console.log(`accessToken`);
+        const sql = 'SELECT * FROM UserInfo WHERE user_mail = ?';
+        db.get(sql, [req.email], (err, row) => {
+            if (err) {
+                return res.status(500).json({ error: '사용자 조회 중 오류가 발생했습니다.' });
+            }
 
-        const userData = userDatabase.filter(item=>{
-            return item.email === data.email;
-        })
-    const {pw, ...others} = userData;
-
-        res.status(200).json(userData);
+            if (!row) {
+                return res.status(401).json({ error: '사용자를 찾을 수 없습니다.' });
+            }
+            const { user_password, ...others } = row;
+            console.log(`${row}`);
+            return res.status(200).json(row);
+        });
+        //const {pw, ...others} = userData;
+        //res.status(200).json(userData);
     } catch (error) {
         res.status(500).json(error);
     }
@@ -150,21 +151,6 @@ const logout = (req, res) => {
     }
 }
 
-const contactus = (req, res) => {
-    try {
-        const userInfo = {
-            name: '홍길동',
-            position: '사원',
-            phone: '01011112222',
-            email: 'hong@ubisam.com'
-        }
-res.status(200).json(userInfo);
-
-    } catch (error) {
-        
-    }
-}
-
 const dbconnect = (req, res) => {
     try {
         db.all('SELECT * FROM my_table', [], (err, rows) => {
@@ -189,6 +175,5 @@ module.exports = {
     refreshToken,
     loginSucess,
     logout,
-    contactus,
     dbconnect,
 }
