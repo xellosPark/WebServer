@@ -6,11 +6,15 @@ const jwt = require("jsonwebtoken");
 const { authenticateToken } = require('./middleware/middleware');
 const cors = require('cors');
 const {
-    login,
-    accessToken,
-    refreshToken,
-    loginSucess,
-    logout,
+  ////////////////Login///////////////
+    login,      //post
+    accessToken,//get
+    refreshToken,//get
+    loginSucess,//get
+    logout,//post
+  ////////////////Board//////////////
+    boardLoad, //post
+    addToDoList,
 } = require('./controller/index');
 
 const app = express();
@@ -49,6 +53,11 @@ app.use(
     })
 );
 
+console.log("체크1111");
+app.post('/Board', boardLoad);
+app.post('/ToDoList', addToDoList);
+
+
 app.post('/login', login);
 app.post('/logins', (req, res) => {
   const { email, password } = req.body;
@@ -67,9 +76,12 @@ app.post('/logins', (req, res) => {
   }
 });
 
+console.log("체크전");
+app.get('/*'); // 로그인한 유저체크
+
+
 // 액세스 토큰 검증 미들웨어
 app.use(authenticateToken); // 미들웨어 적용
-
 
 app.get('/accesstoken', accessToken);
 app.get('/refreshtoken', refreshToken);
