@@ -15,6 +15,8 @@ const {
   ////////////////Board//////////////
     boardLoad, //post
     addToDoList,
+    updateToDoList,
+    deleteToDoList,
 } = require('./controller/index');
 
 const app = express();
@@ -53,9 +55,11 @@ app.use(
     })
 );
 
-console.log("체크1111");
 app.post('/Board', boardLoad);
 app.post('/ToDoList', addToDoList);
+app.post('/UpdateToDoList', updateToDoList);
+console.log('삭제 테스트');
+app.delete('/DeleteToDoList', deleteToDoList);
 
 
 app.post('/login', login);
@@ -76,8 +80,7 @@ app.post('/logins', (req, res) => {
   }
 });
 
-console.log("체크전");
-app.get('/*'); // 로그인한 유저체크
+//app.get('/*'); // 로그인한 유저체크
 
 
 // 액세스 토큰 검증 미들웨어

@@ -179,10 +179,10 @@ const dbconnect = (req, res) => {
 
 const boardLoad = (req,res) => {
     const {projectName} = req.body;
-    console.log(projectName);
+    //console.log(projectName);
     try {
         db.all(`SELECT * FROM ProjectTodoList_TBL  where ProjectName = '${projectName}';`, [], (err, rows) => {
-            console.log(rows);
+            //console.log(rows);
             if (err) {
                 res.status(400).json({ error: err.message });
                 return;
@@ -218,6 +218,49 @@ const addToDoList = (req,res) => {
     });
 };
 
+const updateToDoList = (req,res) => {
+    const { Index, ProjectName, Title, Content, Status } = req.body; //Date, Name,
+    console.log(req.body);
+    // 데이터를 DB에 저장하는 SQL 쿼리
+    const sql = `UPDATE ProjectTodoList_TBL SET ProjectName = ?, Title = ?, Content = ?, Status = ? WHERE "Index" = ?`;
+
+    // DB에 데이터 삽입
+    db.run(sql, [ProjectName, Title, Content, Status, Index], (err) => {
+        if (err) {
+            // 에러 처리
+            console.log(err);
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        console.log("업데이트");
+        // 성공 응답
+        res.json({
+            message: 'Success',
+            //data: req.body,
+        });
+    });
+};
+
+const deleteToDoList = (req,res) => {
+    const { Index } = req.body;
+    console.log(`${Index}`);
+    if (!Index) {
+        return res.status(400).json({ message: 'Index is required' });
+    }
+
+    const sql = 'DELETE FROM ProjectTodoList_TBL WHERE "Index" = ?';
+
+    // 데이터베이스 쿼리 실행
+    db.run(sql, [Index], function(err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        // 성공적으로 삭제된 경우
+        res.json({ message: 'Successfully deleted', deletedID: Index });
+    });
+};
+
 module.exports = {
     login,
     accessToken,
@@ -227,4 +270,6 @@ module.exports = {
     dbconnect,
     boardLoad,
     addToDoList,
+    updateToDoList,
+    deleteToDoList,
 }
