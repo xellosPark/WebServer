@@ -24,9 +24,10 @@ dotenv.config();
 // 데이터베이스 연결 초기화
 const db = require('./Database');
 
-const ACCESS_TOKEN_SECRET = "1234";
-const REFRESH_TOKEN_SECRET = "1234";
+const ACCESS_TOKEN_SECRET = "ubi_7788";
+const REFRESH_TOKEN_SECRET = "ubi_8877";
 global.refreshTokens = {}; // 리프레시 토큰 저장소
+//global.refreshEmails = {};
 
 
 process.on('SIGINT', () => {
@@ -46,19 +47,20 @@ const users = {
 
 //기본설정
 app.use(express.json());
-app.use(cookieParser());
+
 app.use(
     cors({
         origin: 'http://localhost:3000',
         methods: ['GET', 'POST', 'DELETE', 'PUT'],
         credentials: true,
+        //exposedHeaders : "Authorization", //config.addExposedHeader("Authorization");
     })
 );
+app.use(cookieParser());
 
 app.post('/Board', boardLoad);
 app.post('/ToDoList', addToDoList);
 app.post('/UpdateToDoList', updateToDoList);
-console.log('삭제 테스트');
 app.delete('/DeleteToDoList', deleteToDoList);
 
 
@@ -91,19 +93,21 @@ app.get('/refreshtoken', refreshToken);
 app.get('/login/success', loginSucess);
 
 //토큰 확인 완료 24.03.04
-app.post('/token', (req, res) => {
-  //const { token } = req.body;
+app.get('/token', (req, res) => {
+  const { token } = req.body;
   //console.log('token',`${token}`);
   //if (!token) return res.sendStatus(401); // 토큰 없음 또는 저장된 토큰과 다름 // || !refreshTokens[token]
 
   // jwt.verify(token, REFRESH_TOKEN_SECRET, (err, user) => {
   //   if (err) return res.sendStatus(403); // 리프레시 토큰 만료 또는 유효하지 않음
   //   const accessToken = jwt.sign({ id: user.id }, ACCESS_TOKEN_SECRET, { expiresIn: '1m' }); // 새 액세스 토큰 생성
-  //   //res.json({ accessToken }); // 새 액세스 토큰 클라이언트에 전송
+  console.log('토큰 체크 완료');
+  res.sendStatus(204); // 새 액세스 토큰 클라이언트에 전송
   // });
 });
 
-
+console.log('삭제 테스트');
+app.post('/logout', logout);
 
 // 로그아웃 라우트
 app.delete('/logouts', (req, res) => {
@@ -112,7 +116,7 @@ app.delete('/logouts', (req, res) => {
   res.sendStatus(204); // 성공적으로 처리되었음을 응답
 });
 
-app.post('/logout', logout);
+
 
 app.get('/', function(req, res) {
     res.send('hello world');
