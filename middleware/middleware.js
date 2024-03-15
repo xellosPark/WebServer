@@ -67,9 +67,11 @@ const authenticateToken = (req, res, next) => {
           console.log("middle 403");
           return res.sendStatus(403); // 4. 상태 코드 403 반환, 새로 로그인 해야 함
         }
+
+        
         
         // 2. 리프레시 토큰이 유효한 경우, 새 액세스 토큰 발급
-        const newAccessToken = jwt.sign({ id: refreshId }, ACCESS_TOKEN_SECRET, { expiresIn: '1m' , issuer: 'yourIssuer'});
+        const newAccessToken = jwt.sign({ id: refreshId, name: user.name }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' , issuer: 'yourIssuer'});
         res.cookie('accessToken', newAccessToken, { httpOnly: false, secure: false });
         console.log("middle res");
         res.json({ accessToken: newAccessToken }); // 새 액세스 토큰 응답으로 전송
@@ -81,6 +83,6 @@ const authenticateToken = (req, res, next) => {
       next();
     }
   });
-};
+  };
 
 module.exports = { authenticateToken };

@@ -46,13 +46,19 @@ const login = (req, res, next) => {
 
         try {
             const accessToken = jwt.sign(
-                { id: user.user_mail },
+                {
+                    id: user.user_mail,
+                    name: user.name
+                },
                 ACCESS_SECRET,
                 { expiresIn: '1h', issuer: 'yourIssuer' }
             );
 
             const refreshToken = jwt.sign(
-                { id: user.user_mail },
+                {
+                    id: user.user_mail,
+                    name: user.name
+                },
                 REFRESH_SECRET,
                 { expiresIn: '24h', issuer: 'yourIssuer' }
             );
@@ -216,6 +222,19 @@ const dbconnect = (req, res) => {
 
 };
 
+const boardProject = (req, res) => {
+    const { Name } = req.query; //body를 사용하지 않을때는 이렇게
+    console.log(req.query);
+    const sql = 'SELECT * FROM ProjectInfo WHERE Users LIKE = ?';
+    const values = [`%${Name}%`];
+    db.get(sql, values, (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+        }
+        res.json(results);
+    });
+};
+
 const boardLoad = (req, res) => {
     const { projectName } = req.body;
     //console.log(projectName);
@@ -234,7 +253,7 @@ const boardLoad = (req, res) => {
     } catch (error) {
         console.log(`${error}`);
     }
-}
+};
 
 const addToDoList = (req, res) => {
     const { ProjectName, Date, Name, Title, Content, Status } = req.body;
@@ -307,6 +326,7 @@ module.exports = {
     loginSucess,
     logout,
     dbconnect,
+    boardProject,
     boardLoad,
     addToDoList,
     updateToDoList,

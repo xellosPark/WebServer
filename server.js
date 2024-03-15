@@ -13,7 +13,8 @@ const {
     loginSucess,//get
     logout,//post
   ////////////////Board//////////////
-    boardLoad, //post
+    boardProject, //get
+    boardLoad,  //post
     addToDoList,
     updateToDoList,
     deleteToDoList,
@@ -58,12 +59,6 @@ app.use(
 );
 app.use(cookieParser());
 
-app.post('/Board', boardLoad);
-app.post('/ToDoList', addToDoList);
-app.post('/UpdateToDoList', updateToDoList);
-app.delete('/DeleteToDoList', deleteToDoList);
-
-
 app.post('/login', login);
 app.post('/logins', (req, res) => {
   const { email, password } = req.body;
@@ -82,15 +77,15 @@ app.post('/logins', (req, res) => {
   }
 });
 
-//app.get('/*'); // 로그인한 유저체크
 
 
 // 액세스 토큰 검증 미들웨어
 app.use(authenticateToken); // 미들웨어 적용
 
-app.get('/accesstoken', accessToken);
-app.get('/refreshtoken', refreshToken);
-app.get('/login/success', loginSucess);
+
+//app.get('/accesstoken', accessToken);
+//app.get('/refreshtoken', refreshToken);
+//app.get('/login/success', loginSucess);
 
 //토큰 확인 완료 24.03.04
 app.get('/token', (req, res) => {
@@ -106,7 +101,13 @@ app.get('/token', (req, res) => {
   // });
 });
 
-console.log('삭제 테스트');
+
+app.get('/BoardProject', boardProject);
+app.post('/Board', boardLoad);
+app.post('/ToDoList', addToDoList);
+app.post('/UpdateToDoList', updateToDoList);
+app.delete('/DeleteToDoList', deleteToDoList);
+
 app.post('/logout', logout);
 
 // 로그아웃 라우트
