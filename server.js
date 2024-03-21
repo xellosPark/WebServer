@@ -13,11 +13,14 @@ const {
     loginSucess,//get
     logout,//post
   ////////////////Board//////////////
+    getImpProject,
     boardProject, //get
     boardLoad,  //post
     addToDoList,
     updateToDoList,
     deleteToDoList,
+    UpdateUserImpPrj, //post
+    getUserInfo, //get
 } = require('./controller/index');
 
 const app = express();
@@ -101,8 +104,9 @@ app.get('/token', (req, res) => {
   // });
 });
 
-
+app.get('/getImpProject', getImpProject);
 app.get('/BoardProject', boardProject);
+app.post('/UpdateUserImpPrj', UpdateUserImpPrj);
 app.post('/Board', boardLoad);
 app.post('/ToDoList', addToDoList);
 app.post('/UpdateToDoList', updateToDoList);
@@ -117,7 +121,7 @@ app.delete('/logouts', (req, res) => {
   res.sendStatus(204); // 성공적으로 처리되었음을 응답
 });
 
-
+app.get('/getUserInfo', getUserInfo);
 
 app.get('/', function(req, res) {
     res.send('hello world');

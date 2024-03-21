@@ -79,6 +79,7 @@ const login = (req, res, next) => {
                 // 성공
             });
 
+            const userData = { email: user.user_mail, name : user.name, team : user.team, rank : user.rank};
             // 쿠키에 토큰 저장 및 응답 전송
             res.cookie('accessToken', accessToken, { httpOnly: false, secure: false });
             res.cookie('refreshToken', refreshToken, {
@@ -95,7 +96,7 @@ const login = (req, res, next) => {
                 message: 'success',
                 accessToken,
                 refreshToken,
-                user
+                userData
             });
         } catch (error) {
             console.error('토큰 생성 중 오류:', error);
@@ -225,13 +226,14 @@ const dbconnect = (req, res) => {
 const boardProject = (req, res) => {
     const { Name } = req.query; //body를 사용하지 않을때는 이렇게
     console.log(req.query);
-    const sql = 'SELECT * FROM ProjectInfo WHERE Users LIKE = ?';
+    const sql = 'SELECT * FROM ProjectInfo WHERE Users LIKE?';
     const values = [`%${Name}%`];
-    db.get(sql, values, (err, results) => {
+    db.all(sql, values, (err, results) => {
         if (err) {
             return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
         }
-        res.json(results);
+        console.log(results);
+        res.status(200).json(results);
     });
 };
 
@@ -319,6 +321,45 @@ const deleteToDoList = (req, res) => {
     });
 };
 
+const getImpProject = (req, res) => {
+    // const { userEmail, name } = req.query;
+    // const sql = 'SELECT importProject FROM UserInfo WHERE user_mail = ? AND name = ?';
+    // db.get(sql, [userEmail, name], (err, user) => {
+    //     if (err) {
+    //         return res.status(500).json({ error: err.message });        
+    //     }
+
+    //     const userData = { email : user.user_mail, name : user.name, team : user.team, rank : user.rank, impProject : user.importProject};
+    //     return res.status(200).json({userData});
+    // });
+};
+
+const UpdateUserImpPrj = (req, res) => {
+    const { projectName, userName } = req.body;
+    const sql = `UPDATE UserInfo SET importProject = ? WHERE name = ?`;
+    db.run(sql, [projectName, userName], (err) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        return res.status(200).json({ message: 'Successfully Update UserTable', user: userName });
+    });
+};
+
+const getUserInfo = (req, res) => {
+    const { userEmail, name } = req.query;
+//    console.log(`userinfo :  ${userEmail}, ${name}`);
+    const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
+    db.get(sql, [userEmail, name], (err, user) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });        
+        }
+
+        const userData = { email : user.user_mail, name : user.name, team : user.team, rank : user.rank, impProject : user.importProject};
+        return res.status(200).json({userData});
+    });
+}
+
 module.exports = {
     login,
     accessToken,
@@ -327,8 +368,11 @@ module.exports = {
     logout,
     dbconnect,
     boardProject,
+    getImpProject,
+    UpdateUserImpPrj,
     boardLoad,
     addToDoList,
     updateToDoList,
     deleteToDoList,
+    getUserInfo,
 }
