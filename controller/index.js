@@ -225,14 +225,14 @@ const dbconnect = (req, res) => {
 
 const boardProject = (req, res) => {
     const { Name } = req.query; //body를 사용하지 않을때는 이렇게
-    console.log(req.query);
+    //console.log(req.query);
     const sql = 'SELECT * FROM ProjectInfo WHERE Users LIKE?';
     const values = [`%${Name}%`];
     db.all(sql, values, (err, results) => {
         if (err) {
             return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
         }
-        console.log(results);
+        //console.log(results);
         res.status(200).json(results);
     });
 };
@@ -360,6 +360,67 @@ const getUserInfo = (req, res) => {
     });
 }
 
+const addKanBanList = (req, res) => {
+    const { ProjectName, Content, Status, Order } = req.body;
+    // 데이터를 DB에 저장하는 SQL 쿼리
+    const sql = `INSERT INTO ProjectKanBanList (Project, Content, Status, "Order") VALUES (?, ?, ?, ?)`;
+
+    // DB에 데이터 삽입
+    db.run(sql, [ProjectName, Content, Status, Order], (err) => {
+        if (err) {
+            // 에러 처리
+            console.log(err);
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        // 성공 응답
+        res.json({
+            message: 'Success',
+            data: req.body,
+        });
+    });
+};
+
+const loadKanBanList = (req, res) => {
+    const { Project } = req.query; //body를 사용하지 않을때는 이렇게
+    //console.log(req.query);
+    const sql = 'SELECT * FROM ProjectKanBanList WHERE Project = ?';
+    db.all(sql, Project, (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+        }
+        //console.log(results);
+        res.status(200).json(results);
+    });
+}
+
+const updataKanBanList = (req, res) => {
+    const { Project, Content, Status } = req.body;
+    console.log(req.body);
+    const sql = `UPDATE ProjectKanBanList SET Status = ? WHERE Project = ? AND Content = ?`;
+    db.run(sql, [Status, Project, Content], (err) => {
+        if (err) {
+            
+            return res.status(500).json({ error: err.message });
+        }
+        console.log('sss',Project, typeof Project, Content, typeof Content, Status, typeof Status);
+        return res.status(200).json({ message: 'Successfully Update updataKanBanList' });
+    });
+}
+
+const boardPersnal = (req, res) => {
+    const { Name } = req.query; //body를 사용하지 않을때는 이렇게
+    //console.log(req.query);
+    const sql = 'SELECT * FROM ProjectTodoList_TBL WHERE Name = ?';
+    db.all(sql, Name, (err, results) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+        }
+        res.status(200).json(results);
+    });
+};
+
 module.exports = {
     login,
     accessToken,
@@ -375,4 +436,8 @@ module.exports = {
     updateToDoList,
     deleteToDoList,
     getUserInfo,
+    addKanBanList,
+    loadKanBanList,
+    updataKanBanList,
+    boardPersnal,
 }

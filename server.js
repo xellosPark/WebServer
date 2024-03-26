@@ -21,6 +21,10 @@ const {
     deleteToDoList,
     UpdateUserImpPrj, //post
     getUserInfo, //get
+    addKanBanList,
+    loadKanBanList,
+    updataKanBanList,
+    boardPersnal,
 } = require('./controller/index');
 
 const app = express();
@@ -111,6 +115,10 @@ app.post('/Board', boardLoad);
 app.post('/ToDoList', addToDoList);
 app.post('/UpdateToDoList', updateToDoList);
 app.delete('/DeleteToDoList', deleteToDoList);
+app.post('/addKanBanList', addKanBanList);
+app.get('/loadKanBanList', loadKanBanList);
+app.post('/updataKanBanList', updataKanBanList);
+app.get('/boardPersnal', boardPersnal);
 
 app.post('/logout', logout);
 
