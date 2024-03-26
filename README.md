@@ -1,6 +1,15 @@
 설치 목록
 npm i express nodemon dotenv cors jsonwebtoken cookie-parser
-npm install concurrently
+npm install concurrently sqlite3
+
+
+
+//24.02.26
+npm i express 
+
+//24.03.26   *주로 파일 업로드에 사용되는 처리용 node.js 미들웨어
+npm install multer
+
 //.env 파일을 사용하려면 dotenv 패키지를 설치하고 애플리케이션에서 사용해야 합니다.
 
 package.json 추가 항목

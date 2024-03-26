@@ -5,6 +5,9 @@ const cookieParser = require('cookie-parser');
 const jwt = require("jsonwebtoken");
 const { authenticateToken } = require('./middleware/middleware');
 const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const {
   ////////////////Login///////////////
     login,      //post
@@ -25,12 +28,54 @@ const {
     loadKanBanList,
     updataKanBanList,
     boardPersnal,
+    getFile,
 } = require('./controller/index');
 
 const app = express();
 dotenv.config();
 // 데이터베이스 연결 초기화
 const db = require('./Database');
+
+
+const dir = path.join(__dirname, 'uploadFiles');
+if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true }); // recursive: true 옵션으로 중첩 폴더도 생성 가능
+}
+
+// 파일 업로드 설정
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    //cb(null, path.join(__dirname, '/uploadFiles')); // 파일이 저장될 경로
+    const projectName = req.query.Project; // 프로젝트 이름으로 폴더 이름 설정
+    const dir = path.join(__dirname, 'uploadFiles', projectName); // 동적으로 폴더 경로 생성
+
+    // 해당 경로에 폴더가 없으면 생성
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    
+    cb(null, dir); // 파일이 저장될 경로
+  },
+  filename: function(req, file, cb) {
+    console.log('file', file);
+    file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    cb(null, file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage });
+
+
+// 데이터베이스에 파일 정보를 저장하는 테이블 생성
+// db.run(`CREATE TABLE IF NOT EXISTS ProjectFiles (
+//   id INTEGER PRIMARY KEY AUTOINCREMENT,
+//   project TEXT NOT NULL,
+//   filename TEXT NOT NULL,
+//   filepath TEXT NOT NULL,
+//   datetime TEXT NOT NULL
+// )`);
+//  console.log("여기당~");
+
 
 const ACCESS_TOKEN_SECRET = "ubi_7788";
 const REFRESH_TOKEN_SECRET = "ubi_8877";
@@ -67,42 +112,14 @@ app.use(
 app.use(cookieParser());
 
 app.post('/login', login);
-app.post('/logins', (req, res) => {
-  const { email, password } = req.body;
-  console.log(`${email}`, `${password}`);
-  if (email === users.test.id && password === users.test.password) { // 사용자 인증 확인
-    const user = { email };
-    const accessToken = jwt.sign(user, ACCESS_TOKEN_SECRET, { expiresIn: '1m' }); // 액세스 토큰 생성
-    const refreshToken = jwt.sign(user, REFRESH_TOKEN_SECRET, { expiresIn: '3m' }); // 리프레시 토큰 생성
-    
-    global.refreshTokens[refreshToken] = email; // 리프레시 토큰 저장
-    console.log(`${global.refreshTokens}`);
-    res.json({ accessToken, refreshToken }); // 토큰 클라이언트에 전송
-    console.log(`${accessToken}`, `${refreshToken}`);
-  } else {
-    res.send('Username or password incorrect'); // 인증 실패 시 메시지 전송
-  }
-});
-
-
 
 // 액세스 토큰 검증 미들웨어
 app.use(authenticateToken); // 미들웨어 적용
 
 
-//app.get('/accesstoken', accessToken);
-//app.get('/refreshtoken', refreshToken);
-//app.get('/login/success', loginSucess);
-
 //토큰 확인 완료 24.03.04
 app.get('/token', (req, res) => {
   const { token } = req.body;
-  //console.log('token',`${token}`);
-  //if (!token) return res.sendStatus(401); // 토큰 없음 또는 저장된 토큰과 다름 // || !refreshTokens[token]
-
-  // jwt.verify(token, REFRESH_TOKEN_SECRET, (err, user) => {
-  //   if (err) return res.sendStatus(403); // 리프레시 토큰 만료 또는 유효하지 않음
-  //   const accessToken = jwt.sign({ id: user.id }, ACCESS_TOKEN_SECRET, { expiresIn: '1m' }); // 새 액세스 토큰 생성
   console.log('토큰 체크 완료');
   res.sendStatus(204); // 새 액세스 토큰 클라이언트에 전송
   // });
@@ -119,6 +136,7 @@ app.post('/addKanBanList', addKanBanList);
 app.get('/loadKanBanList', loadKanBanList);
 app.post('/updataKanBanList', updataKanBanList);
 app.get('/boardPersnal', boardPersnal);
+app.get('/getFile', getFile);
 
 app.post('/logout', logout);
 
@@ -142,22 +160,75 @@ app.get('/api/data', (req, res) => {
     });
 });
 
-// app.get('/getOrderList', (req, res) => {
+// 파일 업로드 라우트
+app.post('/uploadFile', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+  const { Project, dateTime } = req.query;
+  console.log('uploadFile',dateTime);
+  const file = req.file;
+  //const filepath = '/uploadFiles/' + file.filename;
+  const filepath = path.join('uploadFiles', Project, file.filename); // DB에 저장할 상대 경로
+  db.run(`INSERT INTO ProjectFiles (project, filename, filepath, datetime) VALUES (?, ?, ?, ?)`, [Project, file.filename, filepath, dateTime], function(err) {
+    if (err) {
+      return console.log(err.message);
+    }
+    console.log(`A file has been inserted with rowid ${this.lastID}`);
+    res.status(200).send({ message: "File uploaded successfully", file: { filename: file.filename, filepath: filepath } });
+  });
+});
 
-//     let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InRlc3QiLCJpYXQiOjE3MDkxNzI2NDksImV4cCI6MTcwOTE3MjcwOSwiaXNzIjoieWh3In0.1nxuaQVehmBDMb-KafUqxwcHfyyC4pZNm-MjgONF8Ig"
-//     // 토큰을 디코딩하면, 토큰에 들어있는 데이터를 알 수 있는데, 검증하는 과정이라함은 예를들어 유저 데이터 등에 비교하면 될 것이다
-//     jwt.verify(token, "accessecret", (error, decoded) => {
-//       if (error) {
-//         console.log(`에러가 났습니다\n ${error}`);
-//       }
+app.get('/download/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const projectName = req.query.Project;
+  console.log(filename);
+  // 파일이 저장된 디렉토리 경로, 실제 경로에 맞게 수정해야 합니다.
+  const directoryPath = path.join(__dirname, 'uploadFiles', projectName);
+  const filePath = path.join(directoryPath, filename);
   
-//       // DB 조회
-//       // select * from table where u_id = '${decoed.id}'
+  // 파일 존재 여부를 확인
+  if (fs.existsSync(filePath)) {
+      // 클라이언트로 파일을 전송
+      res.download(filePath, filename, (err) => {
+          if (err) {
+              res.status(500).send({
+                  message: "File can not be downloaded: " + err,
+              });
+          }
+      });
+  } else {
+      // 파일이 없는 경우 에러 메시지 전송
+      res.status(404).send({
+          message: "File not found",
+      });
+  }
+});
+
+app.delete('/deleteFile/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const projectName = req.query.Project;
+  console.log('deleteFile', filename, projectName);
+  const filePath = path.join(__dirname, 'uploadFiles', projectName, filename);
   
-//       console.log(decoded);
-//       res.send(decoded);
-//     })
-//   });
+  // 파일 시스템에서 파일 삭제
+  fs.unlink(filePath, (err) => {
+      if (err) {
+          return res.status(500).send({message: "Failed to delete the file."});
+      }
+
+      // 데이터베이스에서 레코드 삭제
+      const sql = `DELETE FROM ProjectFiles WHERE filename = ? AND project = ?`;
+      db.run(sql, [filename, projectName], function(err) {
+          if (err) {
+              return console.error(err.message);
+          }
+          console.log(`Deleted file record with filename: ${filename}`);
+          res.send({message: "File and database record deleted successfully."});
+      });
+  });
+});
+
 
 app.listen(process.env.PORT, () => {
     console.log(`server is on ${process.env.PORT}`);

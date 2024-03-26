@@ -421,6 +421,19 @@ const boardPersnal = (req, res) => {
     });
 };
 
+const getFile = (req, res) => {
+    const { Project } = req.query;
+    console.log('getFile',Project);
+    const sql = 'SELECT * FROM ProjectFiles WHERE project = ?';
+    db.all(sql, Project, (err, results) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+        }
+        res.status(200).json(results);
+    });
+};
+
 module.exports = {
     login,
     accessToken,
@@ -440,4 +453,5 @@ module.exports = {
     loadKanBanList,
     updataKanBanList,
     boardPersnal,
+    getFile,
 }
