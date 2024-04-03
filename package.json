@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently \"set PORT=3002 && react-scripts start\" \"nodemon server.js\""
+    "start": "concurrently \"set PORT=8080 && react-scripts start\" \"nodemon server.js\""
   },
   "author": "",
   "license": "ISC",
@@ -16,6 +16,7 @@
     "do": "^0.7.0",
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
+    "express-session": "^1.18.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "nodemon": "^3.0.3",

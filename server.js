@@ -1,9 +1,10 @@
+const session = require('express-session');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const jwt = require("jsonwebtoken");
-const { authenticateToken } = require('./middleware/middleware');
+//const { authenticateToken } = require('./middleware/middleware');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
@@ -79,7 +80,7 @@ const upload = multer({ storage: storage });
 
 const ACCESS_TOKEN_SECRET = "ubi_7788";
 const REFRESH_TOKEN_SECRET = "ubi_8877";
-global.refreshTokens = {}; // 리프레시 토큰 저장소
+global.refreshTokens = []; // 리프레시 토큰 저장소
 //global.refreshEmails = {};
 
 
@@ -101,28 +102,70 @@ const users = {
 //기본설정
 app.use(express.json());
 
-app.use(
-    cors({
-        origin: 'http://localhost:3000',
-        methods: ['GET', 'POST', 'DELETE', 'PUT'],
-        credentials: true,
-        //exposedHeaders : "Authorization", //config.addExposedHeader("Authorization");
-    })
-);
-app.use(cookieParser());
+  app.use(cookieParser());
+
+let allowedOrigins = [
+  'http://localhost:3000', 
+  'http://localhost:3001',
+  'http://192.168.0.136:5052'
+];
+
+// Specific CORS configuration
+const corsOptionsDelegate = function (req, callback) {
+  var corsOptions;
+  let requestOrigin = req.header('Origin');
+  //console.log("Request Origin:", requestOrigin); // Debugging line
+
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    corsOptions = { origin: true, credentials: true }; // 'credentials: true' 옵션 추가
+    //console.log("CORS allowed for:", requestOrigin); // Debugging line
+  } else {
+    corsOptions = { origin: false };
+    //console.log("CORS denied for:", requestOrigin); // Debugging line
+  }
+  
+  callback(null, corsOptions);
+};
+
+app.use(cors(corsOptionsDelegate));
+//app.use(authenticateToken); // 미들웨어 적용
 
 app.post('/login', login);
-
 // 액세스 토큰 검증 미들웨어
-app.use(authenticateToken); // 미들웨어 적용
 
+app.post('/refresh', (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken || !global.refreshTokens.includes(refreshToken)) {
+      return res.sendStatus(403);
+  }
+  jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, user) => {
+      if (err) {
+          return res.sendStatus(403);
+      }
+      console.log('재발급 진행');
+      const newAccessToken = jwt.sign({ id: user.id, username: user.username }, ACCESS_TOKEN_SECRET, { expiresIn: '8h' });
+      res.json({ accessToken: newAccessToken });
+  });
+});
+
+// 토큰 인증 미들웨어
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // "Bearer TOKEN" 형식
+
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403); // 토큰이 유효하지 않음
+    req.user = user;
+    next();
+  });
+};
 
 //토큰 확인 완료 24.03.04
-app.get('/token', (req, res) => {
-  const { token } = req.body;
+app.get('/token',authenticateToken,(req, res) => {
   console.log('토큰 체크 완료');
-  res.sendStatus(204); // 새 액세스 토큰 클라이언트에 전송
-  // });
+  res.json({ message: "보호된 라우트에 오신 것을 환영합니다!", user: req.user });
 });
 
 app.get('/getImpProject', getImpProject);
@@ -143,15 +186,11 @@ app.post('/logout', logout);
 // 로그아웃 라우트
 app.delete('/logouts', (req, res) => {
   const { token } = req.body;
-  delete global.refreshTokens[token]; // 저장된 리프레시 토큰 삭제
-  res.sendStatus(204); // 성공적으로 처리되었음을 응답
+  //delete global.refreshTokens[token]; // 저장된 리프레시 토큰 삭제
+  res.sendStatus(205); // 성공적으로 처리되었음을 응답
 });
 
 app.get('/getUserInfo', getUserInfo);
-
-app.get('/', function(req, res) {
-    res.send('hello world');
-  });
 
 app.get('/api/data', (req, res) => {
     res.json({
@@ -227,6 +266,18 @@ app.delete('/deleteFile/:filename', (req, res) => {
           res.send({message: "File and database record deleted successfully."});
       });
   });
+});
+
+// 정적 파일 제공을 위한 경로 설정
+app.use(express.static(path.join(__dirname, 'build')));
+
+// 모든 요청을 index.html로 리다이렉트
+app.get('/*', function(req, res) {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
+app.get('/', function(req, res) {
+  res.send('hello world');
 });
 
 

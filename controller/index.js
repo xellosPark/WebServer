@@ -12,7 +12,9 @@ const SECRET_KEY = crypto.randomBytes(64).toString('hex');
 
 
 const login = (req, res, next) => {
+    const isProduction = process.env.NODE_ENV === 'production';
     const { email, password } = req.body;
+    console.log('로그인 진행',email, password);
 
     // 데이터베이스에서 사용자 조회 (가정)
     const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND phon_number = ?';
@@ -51,7 +53,7 @@ const login = (req, res, next) => {
                     name: user.name
                 },
                 ACCESS_SECRET,
-                { expiresIn: '1h', issuer: 'yourIssuer' }
+                { expiresIn : '8h' } //expiresIn
             );
 
             const refreshToken = jwt.sign(
@@ -60,12 +62,27 @@ const login = (req, res, next) => {
                     name: user.name
                 },
                 REFRESH_SECRET,
-                { expiresIn: '24h', issuer: 'yourIssuer' }
+                { expiresIn: '24h'}
             );
 
+            // res.cookie('accessToken', accessToken, {
+            //     httpOnly: true,
+            //     sameSite: 'Strict',
+            //     secure: process.env.NODE_ENV === 'production', // Only set Secure in production
+            //     maxAge: 3600000 // 1 hour in milliseconds
+            //   });
 
-            global.refreshTokens[refreshToken] = email;
-            console.log(`db에 넣기전 refreshToken 확인 ${refreshToken}`);
+            //   res.cookie('refreshToken', refreshToken, {
+            //     httpOnly: true,
+            //     sameSite: 'Strict',
+            //     secure: process.env.NODE_ENV === 'production', // Only set Secure in production
+            //     maxAge: 3600000 // 1 hour in milliseconds
+            //   });
+
+
+            global.refreshTokens.push(refreshToken);
+            //console.log('login refresh추가', global.refreshTokens);
+            //console.log(`db에 넣기전 refreshToken 확인 ${refreshToken}`);
 
             const sql = `UPDATE UserInfo SET RefreshToken = ? WHERE user_mail = ?`;
             // DB에 데이터 삽입
@@ -81,14 +98,13 @@ const login = (req, res, next) => {
 
             const userData = { email: user.user_mail, name : user.name, team : user.team, rank : user.rank};
             // 쿠키에 토큰 저장 및 응답 전송
-            res.cookie('accessToken', accessToken, { httpOnly: false, secure: false });
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: false,
-                secure: false, // HTTPS를 사용할 경우에만 true로 설정
-                //sameSite: "none",//sameSite: 'strict',
+            console.log('accessToken 생성');
+            //res.cookie('accessToken', accessToken, { httpOnly:true, secure: isProduction, sameSite: "None" });
+            //res.cookie('refreshToken', refreshToken, { httpOnly:true, secure: isProduction, // HTTPS(운영 환경)를 사용할 경우에만 true로 설정
+            //    sameSite: "None"//sameSite: 'strict',
                 //path: '/refresh-token', //refresh-token 이걸로 path등록하면 로그아웃할때 /logout이 아닌 /refresh-token 사용해야되는것으로 보임
                 //모든 경로에서 쿠키가 전송되도록 변경함
-            });
+            //});
             console.log('토큰 발급 완료');
 
             return res.status(200).json({
@@ -184,7 +200,9 @@ const loginSucess = (req, res) => {
 
 const logout = (req, res) => {
     const authHeader = req.headers['authorization'];
-    const refreshToken = req.cookies.refreshToken;
+    const { refreshToken } = req.body;
+
+    console.log('로그아웃', refreshToken);
     if (!authHeader) return res.sendStatus(401);
 
     jwt.verify(refreshToken, REFRESH_SECRET, (err, user) => {
@@ -193,14 +211,15 @@ const logout = (req, res) => {
             return res.status(403).json({ error: "Token verification failed" }); // 여기를 수정
         }
 
-        console.log("삭제전 ", JSON.stringify(global.refreshTokens, null, 2));
-        if (global.refreshTokens[refreshToken]) {
-            delete global.refreshTokens[refreshToken];
+        //console.log("삭제전 ", JSON.stringify(global.refreshTokens, null, 2));
+        const index = global.refreshTokens.indexOf(refreshToken);
+        if (index > -1) {
+            global.refreshTokens.splice(index, 1); // refreshToken이 있는 인덱스를 찾아서 제거
         }
-        console.log("삭제후", JSON.stringify(global.refreshTokens, null, 2));
-        res.clearCookie('accessToken');
-        res.clearCookie('refreshToken'); // 클라이언트 측 쿠키에서 RefreshToken을 삭제
-        return res.sendStatus(204); // 성공적으로 처리되었음을 나타내는 204 상태 코드 반환
+        //console.log("삭제후", JSON.stringify(global.refreshTokens, null, 2));
+        //res.clearCookie('accessToken');
+        //res.clearCookie('refreshToken'); // 클라이언트 측 쿠키에서 RefreshToken을 삭제
+        return res.sendStatus(200); // 성공적으로 처리되었음을 나타내는 204 상태 코드 반환
     });
 
 }
@@ -239,7 +258,7 @@ const boardProject = (req, res) => {
 
 const boardLoad = (req, res) => {
     const { projectName } = req.body;
-    //console.log(projectName);
+    console.log(projectName);
     try {
         db.all(`SELECT * FROM ProjectTodoList_TBL where ProjectName = '${projectName}';`, [], (err, rows) => {
             //console.log(rows);
@@ -279,20 +298,20 @@ const addToDoList = (req, res) => {
 };
 
 const updateToDoList = (req, res) => {
-    const { Index, ProjectName, Title, Content, Status } = req.body; //Date, Name,
-    console.log(req.body);
+    const { Index, ProjectName, Name, Title, Content, Status } = req.body; //Date, Name,
+    //console.log(req.body);
     // 데이터를 DB에 저장하는 SQL 쿼리
-    const sql = `UPDATE ProjectTodoList_TBL SET ProjectName = ?, Title = ?, Content = ?, Status = ? WHERE "Index" = ?`;
+    const sql = `UPDATE ProjectTodoList_TBL SET ProjectName = ?, Title = ?, Content = ?, Status = ? WHERE "Index" = ? AND Name = ?`;
 
     // DB에 데이터 삽입
-    db.run(sql, [ProjectName, Title, Content, Status, Index], (err) => {
+    db.run(sql, [ProjectName, Title, Content, Status, Index, Name], (err) => {
         if (err) {
             // 에러 처리
             console.log(err);
             res.status(400).json({ error: err.message });
             return;
         }
-        console.log("업데이트");
+        //console.log("업데이트");
         // 성공 응답
         res.json({
             message: 'Success',
@@ -347,7 +366,9 @@ const UpdateUserImpPrj = (req, res) => {
 };
 
 const getUserInfo = (req, res) => {
+    console.log('getuserinfo 들어옴');
     const { userEmail, name } = req.query;
+    console.log('getuserinfo', userEmail, name );
 //    console.log(`userinfo :  ${userEmail}, ${name}`);
     const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
     db.get(sql, [userEmail, name], (err, user) => {
@@ -422,8 +443,9 @@ const boardPersnal = (req, res) => {
 };
 
 const getFile = (req, res) => {
+    //console.log('getFile');
     const { Project } = req.query;
-    console.log('getFile',Project);
+    //console.log('getFile',Project);
     const sql = 'SELECT * FROM ProjectFiles WHERE project = ?';
     db.all(sql, Project, (err, results) => {
         if (err) {

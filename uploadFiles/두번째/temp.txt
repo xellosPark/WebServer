@@ -1,0 +1,26 @@
+온도조절계의 통신
+read commend - DRS, IRS
+write commend - DWS, IWS
+임의는 필요 없을듯 싶음
+
+선두 :
+시작 STX(0x02)
+종단 CR(0x0D) LF(0x0A)
+
+---Read---
+송신 : stx + __DRS.개수.D Register + CR LF
+	   (address)
+수신 : stx + __DRS.OK.Data... + CR LF
+	   (address)
+
+---Write---
+송신 : stx + __DWS.개수.D Register.Data.... + CR LF
+	    (address)
+수신 : stx + __DWS.OK.Data + CR LF
+	    (address)
+
+write로 send 보내고
+read respons를 통해서 recive  - 송신
+data process에서 수신 받아 g_p로 변수 전달 - 수신으로 값가져옴
+
+공유해드립니다.
