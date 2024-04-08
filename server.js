@@ -28,6 +28,7 @@ const {
     addKanBanList,
     loadKanBanList,
     updataKanBanList,
+    deleteKanBanList,
     boardPersnal,
     getFile,
 } = require('./controller/index');
@@ -107,7 +108,7 @@ app.use(express.json());
 let allowedOrigins = [
   'http://localhost:3000', 
   'http://localhost:3001',
-  'http://192.168.0.136:5052'
+  'http://14.58.108.70:8877'
 ];
 
 // Specific CORS configuration
@@ -178,6 +179,7 @@ app.delete('/DeleteToDoList', deleteToDoList);
 app.post('/addKanBanList', addKanBanList);
 app.get('/loadKanBanList', loadKanBanList);
 app.post('/updataKanBanList', updataKanBanList);
+app.delete('/deleteKanBanList', deleteKanBanList);
 app.get('/boardPersnal', boardPersnal);
 app.get('/getFile', getFile);
 

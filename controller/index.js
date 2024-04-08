@@ -429,6 +429,22 @@ const updataKanBanList = (req, res) => {
     });
 }
 
+const deleteKanBanList = (req, res) => {
+    const { Project, Content } = req.body;
+
+    const sql = 'DELETE FROM ProjectKanBanList WHERE Project = ? AND Content = ?';
+    // 데이터베이스 쿼리 실행
+    db.run(sql, [Project, Content], (err) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        // 성공적으로 삭제된 경우
+        res.json({ message: 'Successfully deleted', deletedID: Index });
+    });
+
+}
+
 const boardPersnal = (req, res) => {
     const { Name } = req.query; //body를 사용하지 않을때는 이렇게
     //console.log(req.query);
@@ -474,6 +490,7 @@ module.exports = {
     addKanBanList,
     loadKanBanList,
     updataKanBanList,
+    deleteKanBanList,
     boardPersnal,
     getFile,
 }
