@@ -279,10 +279,10 @@ const boardLoad = (req, res) => {
 const addToDoList = (req, res) => {
     const { ProjectName, Date, Name, Title, Content, Status } = req.body;
     // 데이터를 DB에 저장하는 SQL 쿼리
-    const sql = `INSERT INTO ProjectTodoList_TBL (ProjectName, Date, Name, Title, Content, Status) VALUES (?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO ProjectTodoList_TBL (ProjectName, Date, ChangeDate, Name, Title, Content, Status) VALUES (?, ?, ?, ?, ?, ?)`;
 
     // DB에 데이터 삽입
-    db.run(sql, [ProjectName, Date, Name, Title, Content, Status], (err) => {
+    db.run(sql, [ProjectName, Date, null, Name, Title, Content, Status], (err) => {
         if (err) {
             // 에러 처리
             res.status(400).json({ error: err.message });
@@ -298,13 +298,13 @@ const addToDoList = (req, res) => {
 };
 
 const updateToDoList = (req, res) => {
-    const { Index, ProjectName, Name, Title, Content, Status } = req.body; //Date, Name,
+    const { Index, ProjectName, ChangeDate, Name, Title, Content, Status } = req.body; //Date, Name,
     //console.log(req.body);
     // 데이터를 DB에 저장하는 SQL 쿼리
-    const sql = `UPDATE ProjectTodoList_TBL SET ProjectName = ?, Title = ?, Content = ?, Status = ? WHERE "Index" = ? AND Name = ?`;
+    const sql = `UPDATE ProjectTodoList_TBL SET ProjectName = ?, ChangeDate = ?, Title = ?, Content = ?, Status = ? WHERE "Index" = ? AND Name = ?`;
 
     // DB에 데이터 삽입
-    db.run(sql, [ProjectName, Title, Content, Status, Index, Name], (err) => {
+    db.run(sql, [ProjectName, ChangeDate, Title, Content, Status, Index, Name], (err) => {
         if (err) {
             // 에러 처리
             console.log(err);
@@ -434,12 +434,14 @@ const deleteKanBanList = (req, res) => {
 
     const sql = 'DELETE FROM ProjectKanBanList WHERE Project = ? AND Content = ?';
     // 데이터베이스 쿼리 실행
+    console.log('wlsgod1');
     db.run(sql, [Project, Content], (err) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
 
         // 성공적으로 삭제된 경우
+        console.log('진행왼료ㅕ');
         res.json({ message: 'Successfully deleted', deletedID: Index });
     });
 
