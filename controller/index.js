@@ -53,7 +53,7 @@ const login = (req, res, next) => {
                     name: user.name
                 },
                 ACCESS_SECRET,
-                { expiresIn : '8h' } //expiresIn
+                { expiresIn : '1h' } //expiresIn
             );
 
             const refreshToken = jwt.sign(
@@ -62,7 +62,7 @@ const login = (req, res, next) => {
                     name: user.name
                 },
                 REFRESH_SECRET,
-                { expiresIn: '24h'}
+                { expiresIn: '5h'}
             );
 
             // res.cookie('accessToken', accessToken, {
@@ -278,8 +278,9 @@ const boardLoad = (req, res) => {
 
 const addToDoList = (req, res) => {
     const { ProjectName, Date, Name, Title, Content, Status } = req.body;
+    //console.log('addToDoList',ProjectName, Date, Name, Title, Content, Status);
     // 데이터를 DB에 저장하는 SQL 쿼리
-    const sql = `INSERT INTO ProjectTodoList_TBL (ProjectName, Date, ChangeDate, Name, Title, Content, Status) VALUES (?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO ProjectTodoList_TBL (ProjectName, Date, ChangeDate, Name, Title, Content, Status) VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
     // DB에 데이터 삽입
     db.run(sql, [ProjectName, Date, null, Name, Title, Content, Status], (err) => {
@@ -431,7 +432,7 @@ const updataKanBanList = (req, res) => {
 
 const deleteKanBanList = (req, res) => {
     const { Project, Content } = req.body;
-
+    //console.log('deleteKanBanList ' ,Project, Content);
     const sql = 'DELETE FROM ProjectKanBanList WHERE Project = ? AND Content = ?';
     // 데이터베이스 쿼리 실행
     console.log('wlsgod1');
@@ -442,7 +443,7 @@ const deleteKanBanList = (req, res) => {
 
         // 성공적으로 삭제된 경우
         console.log('진행왼료ㅕ');
-        res.json({ message: 'Successfully deleted', deletedID: Index });
+        res.json({ message: 'Successfully deleted' });
     });
 
 }
@@ -474,6 +475,57 @@ const getFile = (req, res) => {
     });
 };
 
+const subAddBoard = (req, res) => {
+    const {ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum} = req.body;
+    const subTableName = 'SubDashboard' + ProjectName;
+
+    const sql = `INSERT INTO ${subTableName} (ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum) VALUES (?, ?, ?, ?, ? ,? ,?, ?, ?)`;
+
+    // DB에 데이터 삽입
+    db.run(sql, [ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum], (err) => {
+        if (err) {
+            // 에러 처리
+            console.log(err);
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        // 성공 응답
+        res.json({
+            message: 'Success',
+            data: req.body,
+        });
+    });
+}
+
+const subLoadBoard = (req, res) => {
+    const { ProjectName, Name } = req.query; //body를 사용하지 않을때는 이렇게
+    //console.log(req.query);
+    const subTableName = 'SubDashboard' + ProjectName;
+    const sql = `SELECT * FROM ${subTableName} WHERE ProjectName = ? AND Name = ?`;
+    db.all(sql,ProjectName, Name, (err, results) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+        }
+        res.status(200).json(results);
+    });
+}
+
+const subUpdateBoard = (req, res) => {
+    const { Index, ProjectName, ChangeDate, Name, Title, Content, Status, FieldNum } = req.body;
+    console.log('subUpdateBoard', req.body);
+    //console.log(req.body);
+    const subTableName = 'SubDashboard' + ProjectName;
+    const sql = `UPDATE ${subTableName} SET ChangeDate = ?, Title = ?, Content = ?, Status = ? WHERE "Index" =? AND FieldNum = ? AND ProjectName = ? AND Name = ?`;
+    db.run(sql, [ChangeDate, Title, Content, Status, Index, FieldNum, ProjectName, Name], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        return res.status(200).json({ message: 'Successfully Update subUpdateBoard' });
+    });
+}
+
 module.exports = {
     login,
     accessToken,
@@ -495,4 +547,7 @@ module.exports = {
     deleteKanBanList,
     boardPersnal,
     getFile,
+    subAddBoard,
+    subLoadBoard,
+    subUpdateBoard,
 }

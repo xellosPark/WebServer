@@ -31,6 +31,9 @@ const {
     deleteKanBanList,
     boardPersnal,
     getFile,
+    subAddBoard,
+    subLoadBoard,
+    subUpdateBoard,
 } = require('./controller/index');
 
 const app = express();
@@ -108,7 +111,7 @@ app.use(express.json());
 let allowedOrigins = [
   'http://localhost:3000', 
   'http://localhost:3001',
-  'http://14.58.108.70:8877'
+  'http://localhost:8877',
 ];
 
 // Specific CORS configuration
@@ -136,7 +139,7 @@ app.post('/login', login);
 
 app.post('/refresh', (req, res) => {
   const { refreshToken } = req.body;
-  if (!refreshToken || !global.refreshTokens.includes(refreshToken)) {
+  if (!refreshToken && !global.refreshTokens.includes(refreshToken)) {
       return res.sendStatus(403);
   }
   jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, user) => {
@@ -144,7 +147,7 @@ app.post('/refresh', (req, res) => {
           return res.sendStatus(403);
       }
       console.log('재발급 진행');
-      const newAccessToken = jwt.sign({ id: user.id, username: user.username }, ACCESS_TOKEN_SECRET, { expiresIn: '8h' });
+      const newAccessToken = jwt.sign({ id: user.id, username: user.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
       res.json({ accessToken: newAccessToken });
   });
 });
@@ -182,6 +185,9 @@ app.post('/updataKanBanList', updataKanBanList);
 app.delete('/deleteKanBanList', deleteKanBanList);
 app.get('/boardPersnal', boardPersnal);
 app.get('/getFile', getFile);
+app.post('/subAddBoard', subAddBoard);
+app.get('/subLoadBoard', subLoadBoard);
+app.post('/subUpdateBoard', subUpdateBoard);
 
 app.post('/logout', logout);
 
