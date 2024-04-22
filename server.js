@@ -187,6 +187,7 @@ app.post('/addKanBanList', addKanBanList);
 app.get('/loadKanBanList', loadKanBanList);
 app.post('/updataKanBanList', updataKanBanList);
 app.delete('/deleteKanBanList', deleteKanBanList);
+app.delete('/deleteKanBanList', deleteKanBanList);
 app.get('/boardPersnal', boardPersnal);
 app.get('/getFile', getFile);
 app.post('/subAddBoard', subAddBoard);
@@ -285,13 +286,25 @@ app.delete('/deleteFile/:filename', (req, res) => {
 app.use(express.static(path.join(__dirname, 'build')));
 
 // 모든 요청을 index.html로 리다이렉트
+// app.get('/*', function(req, res) {
+//   res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// });
+
+// 디바이스 타입에 따라 다른 경로 제공
 app.get('/*', function(req, res) {
+  //const userAgent = req.headers['user-agent'].toLowerCase();
+  //const mobileRegex = /mobile|android|touch|webos|iphone|ipad|ipod/i;
+  //if (mobileRegex.test(userAgent)) {
+   // 모바일 사용자의 경우 모바일 전용 경로 제공
+   //res.sendFile(path.join(__dirname, 'build', 'mobile', 'index.html'));
+  //} else {
+   // PC 사용자의 경우 기존 경로 사용
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  //}
 });
 
-app.get('/', function(req, res) {
-  res.send('hello world');
-});
+
+
 
 
 app.listen(process.env.PORT, () => {

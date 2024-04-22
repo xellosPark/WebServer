@@ -98,7 +98,7 @@ const login = (req, res, next) => {
 
             const userData = { email: user.user_mail, name : user.name, team : user.team, rank : user.rank};
             // 쿠키에 토큰 저장 및 응답 전송
-            console.log('accessToken 생성');
+            //console.log('accessToken 생성');
             //res.cookie('accessToken', accessToken, { httpOnly:true, secure: isProduction, sameSite: "None" });
             //res.cookie('refreshToken', refreshToken, { httpOnly:true, secure: isProduction, // HTTPS(운영 환경)를 사용할 경우에만 true로 설정
             //    sameSite: "None"//sameSite: 'strict',
@@ -390,9 +390,9 @@ const UpdateUserImpPrj = (req, res) => {
 };
 
 const getUserInfo = (req, res) => {
-    console.log('getuserinfo 들어옴');
+    //console.log('getuserinfo 들어옴');
     const { userEmail, name } = req.query;
-    console.log('getuserinfo', userEmail, name );
+    //console.log('getuserinfo', userEmail, name );
 //    console.log(`userinfo :  ${userEmail}, ${name}`);
     const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
     db.get(sql, [userEmail, name], (err, user) => {
@@ -525,6 +525,7 @@ const subLoadBoard = (req, res) => {
     //console.log(req.query);
     const subTableName = 'SubDashboard' + _ProjectName;
     const sql = `SELECT * FROM ${subTableName} WHERE ProjectName = ? AND Name = ?`;
+    //console.log(sql);
     db.all(sql,ProjectName, Name, (err, results) => {
         if (err) {
             console.log(err);
@@ -562,6 +563,7 @@ module.exports = {
     boardLoad,
     addToDoList,
     updateToDoList,
+    updateStatusList,
     updateStatusList,
     deleteToDoList,
     getUserInfo,

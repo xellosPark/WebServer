@@ -122,9 +122,8 @@ dist
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
-# 제외 폴더 및 파일
+uploadFiles/
 build/
-.bak
 
 # yarn v2
 .yarn/cache
