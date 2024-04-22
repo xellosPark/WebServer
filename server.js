@@ -29,6 +29,7 @@ const {
     loadKanBanList,
     updataKanBanList,
     deleteKanBanList,
+    deleteKanBanList,
     boardPersnal,
     getFile,
     subAddBoard,
@@ -144,6 +145,7 @@ app.post('/login', login);
 app.post('/refresh', (req, res) => {
   const { refreshToken } = req.body;
   if (!refreshToken && !global.refreshTokens.includes(refreshToken)) {
+  if (!refreshToken && !global.refreshTokens.includes(refreshToken)) {
       return res.sendStatus(403);
   }
   jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, user) => {
@@ -151,6 +153,7 @@ app.post('/refresh', (req, res) => {
           return res.sendStatus(403);
       }
       console.log('재발급 진행');
+      const newAccessToken = jwt.sign({ id: user.id, username: user.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
       const newAccessToken = jwt.sign({ id: user.id, username: user.username }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
       res.json({ accessToken: newAccessToken });
   });
@@ -186,6 +189,7 @@ app.delete('/DeleteToDoList', deleteToDoList);
 app.post('/addKanBanList', addKanBanList);
 app.get('/loadKanBanList', loadKanBanList);
 app.post('/updataKanBanList', updataKanBanList);
+app.delete('/deleteKanBanList', deleteKanBanList);
 app.delete('/deleteKanBanList', deleteKanBanList);
 app.get('/boardPersnal', boardPersnal);
 app.get('/getFile', getFile);
