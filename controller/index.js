@@ -53,7 +53,7 @@ const login = (req, res, next) => {
                     name: user.name
                 },
                 ACCESS_SECRET,
-                { expiresIn : '8h' } //expiresIn
+                { expiresIn : '1h' } //expiresIn
             );
 
             const refreshToken = jwt.sign(
@@ -62,7 +62,7 @@ const login = (req, res, next) => {
                     name: user.name
                 },
                 REFRESH_SECRET,
-                { expiresIn: '24h'}
+                { expiresIn: '5h'}
             );
 
             // res.cookie('accessToken', accessToken, {
@@ -98,7 +98,7 @@ const login = (req, res, next) => {
 
             const userData = { email: user.user_mail, name : user.name, team : user.team, rank : user.rank};
             // 쿠키에 토큰 저장 및 응답 전송
-            console.log('accessToken 생성');
+            //console.log('accessToken 생성');
             //res.cookie('accessToken', accessToken, { httpOnly:true, secure: isProduction, sameSite: "None" });
             //res.cookie('refreshToken', refreshToken, { httpOnly:true, secure: isProduction, // HTTPS(운영 환경)를 사용할 경우에만 true로 설정
             //    sameSite: "None"//sameSite: 'strict',
@@ -278,11 +278,12 @@ const boardLoad = (req, res) => {
 
 const addToDoList = (req, res) => {
     const { ProjectName, Date, Name, Title, Content, Status } = req.body;
+    //console.log('addToDoList',ProjectName, Date, Name, Title, Content, Status);
     // 데이터를 DB에 저장하는 SQL 쿼리
-    const sql = `INSERT INTO ProjectTodoList_TBL (ProjectName, Date, Name, Title, Content, Status) VALUES (?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO ProjectTodoList_TBL (ProjectName, Date, ChangeDate, Name, Title, Content, Status) VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
     // DB에 데이터 삽입
-    db.run(sql, [ProjectName, Date, Name, Title, Content, Status], (err) => {
+    db.run(sql, [ProjectName, Date, null, Name, Title, Content, Status], (err) => {
         if (err) {
             // 에러 처리
             res.status(400).json({ error: err.message });
@@ -298,13 +299,13 @@ const addToDoList = (req, res) => {
 };
 
 const updateToDoList = (req, res) => {
-    const { Index, ProjectName, Name, Title, Content, Status } = req.body; //Date, Name,
+    const { Index, ProjectName, ChangeDate, Name, Title, Content, Status } = req.body; //Date, Name,
     //console.log(req.body);
     // 데이터를 DB에 저장하는 SQL 쿼리
-    const sql = `UPDATE ProjectTodoList_TBL SET ProjectName = ?, Title = ?, Content = ?, Status = ? WHERE "Index" = ? AND Name = ?`;
+    const sql = `UPDATE ProjectTodoList_TBL SET ProjectName = ?, ChangeDate = ?, Title = ?, Content = ?, Status = ? WHERE "Index" = ? AND Name = ?`;
 
     // DB에 데이터 삽입
-    db.run(sql, [ProjectName, Title, Content, Status, Index, Name], (err) => {
+    db.run(sql, [ProjectName, ChangeDate, Title, Content, Status, Index, Name], (err) => {
         if (err) {
             // 에러 처리
             console.log(err);
@@ -319,6 +320,29 @@ const updateToDoList = (req, res) => {
         });
     });
 };
+
+const updateStatusList = (req, res) => {
+    const { Index, ProjectName, Name, Status } = req.body; //Date, Name,
+    //console.log(req.body);
+    // 데이터를 DB에 저장하는 SQL 쿼리
+    const sql = `UPDATE ProjectTodoList_TBL SET Status = ? WHERE "Index" = ? AND ProjectName =? AND Name = ?`;
+
+    // DB에 데이터 삽입
+    db.run(sql, [Status, Index, ProjectName, Name], (err) => {
+        if (err) {
+            // 에러 처리
+            console.log(err);
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        //console.log("업데이트");
+        // 성공 응답
+        res.json({
+            message: 'Success',
+            //data: req.body,
+        });
+    });
+}
 
 const deleteToDoList = (req, res) => {
     const { Index } = req.body;
@@ -366,9 +390,9 @@ const UpdateUserImpPrj = (req, res) => {
 };
 
 const getUserInfo = (req, res) => {
-    console.log('getuserinfo 들어옴');
+    //console.log('getuserinfo 들어옴');
     const { userEmail, name } = req.query;
-    console.log('getuserinfo', userEmail, name );
+    //console.log('getuserinfo', userEmail, name );
 //    console.log(`userinfo :  ${userEmail}, ${name}`);
     const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
     db.get(sql, [userEmail, name], (err, user) => {
@@ -429,6 +453,24 @@ const updataKanBanList = (req, res) => {
     });
 }
 
+const deleteKanBanList = (req, res) => {
+    const { Project, Content } = req.body;
+    //console.log('deleteKanBanList ' ,Project, Content);
+    const sql = 'DELETE FROM ProjectKanBanList WHERE Project = ? AND Content = ?';
+    // 데이터베이스 쿼리 실행
+    console.log('wlsgod1');
+    db.run(sql, [Project, Content], (err) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        // 성공적으로 삭제된 경우
+        console.log('진행왼료ㅕ');
+        res.json({ message: 'Successfully deleted' });
+    });
+
+}
+
 const boardPersnal = (req, res) => {
     const { Name } = req.query; //body를 사용하지 않을때는 이렇게
     //console.log(req.query);
@@ -456,6 +498,59 @@ const getFile = (req, res) => {
     });
 };
 
+const subAddBoard = (req, res) => {
+    const {ProjectName, _ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum} = req.body;
+    const subTableName = 'SubDashboard' + _ProjectName;
+
+    const sql = `INSERT INTO ${subTableName} (ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum) VALUES (?, ?, ?, ?, ? ,? ,?, ?, ?)`;
+
+    // DB에 데이터 삽입
+    db.run(sql, [ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum], (err) => {
+        if (err) {
+            // 에러 처리
+            console.log(err);
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        // 성공 응답
+        res.json({
+            message: 'Success',
+            data: req.body,
+        });
+    });
+}
+
+const subLoadBoard = (req, res) => {
+    const { ProjectName, _ProjectName, Name } = req.body; //body를 사용하지 않을때는 이렇게
+    //console.log(req.body);
+    //const newText = ProjectName.replace(/\s+/g, ''); // 모든
+    const subTableName = 'SubDashboard' + _ProjectName;
+    const sql = `SELECT * FROM ${subTableName} WHERE ProjectName = ? AND Name = ?`;
+    //console.log(sql);
+    db.all(sql,ProjectName, Name, (err, results) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+        }
+        res.status(200).json(results);
+    });
+}
+
+const subUpdateBoard = (req, res) => {
+    const { Index, ProjectName, _ProjectName, ChangeDate, Name, Title, Content, Status, FieldNum } = req.body;
+    //console.log('subUpdateBoard', req.body);
+    //console.log(req.body);
+    const subTableName = 'SubDashboard' + _ProjectName;
+    const sql = `UPDATE ${subTableName} SET ChangeDate = ?, Title = ?, Content = ?, Status = ? WHERE "Index" =? AND FieldNum = ? AND ProjectName = ? AND Name = ?`;
+    db.run(sql, [ChangeDate, Title, Content, Status, Index, FieldNum, ProjectName, Name], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        return res.status(200).json({ message: 'Successfully Update subUpdateBoard' });
+    });
+}
+
 module.exports = {
     login,
     accessToken,
@@ -469,11 +564,16 @@ module.exports = {
     boardLoad,
     addToDoList,
     updateToDoList,
+    updateStatusList,
     deleteToDoList,
     getUserInfo,
     addKanBanList,
     loadKanBanList,
     updataKanBanList,
+    deleteKanBanList,
     boardPersnal,
     getFile,
+    subAddBoard,
+    subLoadBoard,
+    subUpdateBoard,
 }
