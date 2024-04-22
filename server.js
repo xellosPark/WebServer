@@ -34,6 +34,7 @@ const {
     subAddBoard,
     subLoadBoard,
     subUpdateBoard,
+    updateStatusList,
 } = require('./controller/index');
 
 const app = express();
@@ -112,6 +113,9 @@ let allowedOrigins = [
   'http://localhost:3000', 
   'http://localhost:3001',
   'http://localhost:8877',
+  'http://14.58.108.70:8877',
+  'http://todo.ubisam.com:8877',
+  'http://ubisam.iptime.org:8877'
 ];
 
 // Specific CORS configuration
@@ -186,8 +190,9 @@ app.delete('/deleteKanBanList', deleteKanBanList);
 app.get('/boardPersnal', boardPersnal);
 app.get('/getFile', getFile);
 app.post('/subAddBoard', subAddBoard);
-app.get('/subLoadBoard', subLoadBoard);
+app.post('/subLoadBoard', subLoadBoard);
 app.post('/subUpdateBoard', subUpdateBoard);
+app.post('/updateStatusList', updateStatusList);
 
 app.post('/logout', logout);
 

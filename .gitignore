@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -123,12 +122,13 @@ dist
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
+# 제외 폴더 및 파일
+build/
+.bak
+
 # yarn v2
 .yarn/cache
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-=======
-node_modules
->>>>>>> d13ff82 (Server Start)

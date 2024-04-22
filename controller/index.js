@@ -321,6 +321,29 @@ const updateToDoList = (req, res) => {
     });
 };
 
+const updateStatusList = (req, res) => {
+    const { Index, ProjectName, Name, Status } = req.body; //Date, Name,
+    //console.log(req.body);
+    // 데이터를 DB에 저장하는 SQL 쿼리
+    const sql = `UPDATE ProjectTodoList_TBL SET Status = ? WHERE "Index" = ? AND ProjectName =? AND Name = ?`;
+
+    // DB에 데이터 삽입
+    db.run(sql, [Status, Index, ProjectName, Name], (err) => {
+        if (err) {
+            // 에러 처리
+            console.log(err);
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        //console.log("업데이트");
+        // 성공 응답
+        res.json({
+            message: 'Success',
+            //data: req.body,
+        });
+    });
+}
+
 const deleteToDoList = (req, res) => {
     const { Index } = req.body;
     console.log(`${Index}`);
@@ -476,8 +499,8 @@ const getFile = (req, res) => {
 };
 
 const subAddBoard = (req, res) => {
-    const {ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum} = req.body;
-    const subTableName = 'SubDashboard' + ProjectName;
+    const {ProjectName, _ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum} = req.body;
+    const subTableName = 'SubDashboard' + _ProjectName;
 
     const sql = `INSERT INTO ${subTableName} (ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum) VALUES (?, ?, ?, ?, ? ,? ,?, ?, ?)`;
 
@@ -498,9 +521,9 @@ const subAddBoard = (req, res) => {
 }
 
 const subLoadBoard = (req, res) => {
-    const { ProjectName, Name } = req.query; //body를 사용하지 않을때는 이렇게
+    const { ProjectName, _ProjectName, Name } = req.body; //body를 사용하지 않을때는 이렇게
     //console.log(req.query);
-    const subTableName = 'SubDashboard' + ProjectName;
+    const subTableName = 'SubDashboard' + _ProjectName;
     const sql = `SELECT * FROM ${subTableName} WHERE ProjectName = ? AND Name = ?`;
     db.all(sql,ProjectName, Name, (err, results) => {
         if (err) {
@@ -512,10 +535,10 @@ const subLoadBoard = (req, res) => {
 }
 
 const subUpdateBoard = (req, res) => {
-    const { Index, ProjectName, ChangeDate, Name, Title, Content, Status, FieldNum } = req.body;
-    console.log('subUpdateBoard', req.body);
+    const { Index, ProjectName, _ProjectName, ChangeDate, Name, Title, Content, Status, FieldNum } = req.body;
+    //console.log('subUpdateBoard', req.body);
     //console.log(req.body);
-    const subTableName = 'SubDashboard' + ProjectName;
+    const subTableName = 'SubDashboard' + _ProjectName;
     const sql = `UPDATE ${subTableName} SET ChangeDate = ?, Title = ?, Content = ?, Status = ? WHERE "Index" =? AND FieldNum = ? AND ProjectName = ? AND Name = ?`;
     db.run(sql, [ChangeDate, Title, Content, Status, Index, FieldNum, ProjectName, Name], (err) => {
         if (err) {
@@ -539,6 +562,7 @@ module.exports = {
     boardLoad,
     addToDoList,
     updateToDoList,
+    updateStatusList,
     deleteToDoList,
     getUserInfo,
     addKanBanList,
