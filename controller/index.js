@@ -321,14 +321,14 @@ const updateToDoList = (req, res) => {
     });
 };
 
-const updateStatusList = (req, res) => {
-    const { Index, ProjectName, Name, Status } = req.body; //Date, Name,
+const updateDateList = (req, res) => {
+    const { Index, ProjectName, Name, ChangeDate } = req.body; //Date, Name,
     //console.log(req.body);
     // 데이터를 DB에 저장하는 SQL 쿼리
-    const sql = `UPDATE ProjectTodoList_TBL SET Status = ? WHERE "Index" = ? AND ProjectName =? AND Name = ?`;
+    const sql = `UPDATE ProjectTodoList_TBL SET ChangeDate = ? WHERE "Index" = ? AND ProjectName =? AND Name = ?`;
 
     // DB에 데이터 삽입
-    db.run(sql, [Status, Index, ProjectName, Name], (err) => {
+    db.run(sql, [ChangeDate, Index, ProjectName, Name], (err) => {
         if (err) {
             // 에러 처리
             console.log(err);
@@ -563,8 +563,7 @@ module.exports = {
     boardLoad,
     addToDoList,
     updateToDoList,
-    updateStatusList,
-    updateStatusList,
+    updateDateList,
     deleteToDoList,
     getUserInfo,
     addKanBanList,

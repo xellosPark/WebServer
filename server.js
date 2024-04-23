@@ -34,7 +34,7 @@ const {
     subAddBoard,
     subLoadBoard,
     subUpdateBoard,
-    updateStatusList,
+    updateDateList,
 } = require('./controller/index');
 
 const app = express();
@@ -193,7 +193,7 @@ app.get('/getFile', getFile);
 app.post('/subAddBoard', subAddBoard);
 app.post('/subLoadBoard', subLoadBoard);
 app.post('/subUpdateBoard', subUpdateBoard);
-app.post('/updateStatusList', updateStatusList);
+app.post('/updateDateList', updateDateList);
 
 app.post('/logout', logout);
 
