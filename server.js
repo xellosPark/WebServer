@@ -35,6 +35,7 @@ const {
     subLoadBoard,
     subUpdateBoard,
     updateDateList,
+    subBoardPersnal,
 } = require('./controller/index');
 
 const app = express();
@@ -43,7 +44,7 @@ dotenv.config();
 const db = require('./Database');
 
 
-const dir = path.join(__dirname, 'uploadFiles');
+const dir = path.join(__dirname, '../WebServerFiles');
 if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true }); // recursive: true 옵션으로 중첩 폴더도 생성 가능
 }
@@ -51,9 +52,9 @@ if (!fs.existsSync(dir)) {
 // 파일 업로드 설정
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    //cb(null, path.join(__dirname, '/uploadFiles')); // 파일이 저장될 경로
+    //cb(null, path.join(__dirname, '../uploadFiles')); // 파일이 저장될 경로
     const projectName = req.query.Project; // 프로젝트 이름으로 폴더 이름 설정
-    const dir = path.join(__dirname, 'uploadFiles', projectName); // 동적으로 폴더 경로 생성
+    const dir = path.join(__dirname, '../WebServerFiles', projectName); // 동적으로 폴더 경로 생성
 
     // 해당 경로에 폴더가 없으면 생성
     if (!fs.existsSync(dir)) {
@@ -111,11 +112,11 @@ app.use(express.json());
 
 let allowedOrigins = [
   'http://localhost:3000', 
-  'http://localhost:3001',
   'http://localhost:8877',
+  'http://192.168.0.136:8877',
   'http://14.58.108.70:8877',
   'http://todo.ubisam.com:8877',
-  'http://ubisam.iptime.org:8877'
+  'http://ubisam.iptime.org:8877',
 ];
 
 // Specific CORS configuration
@@ -143,6 +144,7 @@ app.post('/login', login);
 
 app.post('/refresh', (req, res) => {
   const { refreshToken } = req.body;
+  console.log('/refresh 진행');
   if (!refreshToken && !global.refreshTokens.includes(refreshToken)) {
       return res.sendStatus(403);
   }
@@ -194,6 +196,7 @@ app.post('/subAddBoard', subAddBoard);
 app.post('/subLoadBoard', subLoadBoard);
 app.post('/subUpdateBoard', subUpdateBoard);
 app.post('/updateDateList', updateDateList);
+app.get('/subBoardPersnal', subBoardPersnal);
 
 app.post('/logout', logout);
 
@@ -221,8 +224,8 @@ app.post('/uploadFile', upload.single('file'), (req, res) => {
   const { Project, dateTime } = req.query;
   console.log('uploadFile',dateTime);
   const file = req.file;
-  //const filepath = '/uploadFiles/' + file.filename;
-  const filepath = path.join('uploadFiles', Project, file.filename); // DB에 저장할 상대 경로
+  //const filepath = '../uploadFiles/' + file.filename;
+  const filepath = path.join('../WebServerFiles', Project, file.filename); // DB에 저장할 상대 경로
   db.run(`INSERT INTO ProjectFiles (project, filename, filepath, datetime) VALUES (?, ?, ?, ?)`, [Project, file.filename, filepath, dateTime], function(err) {
     if (err) {
       return console.log(err.message);
@@ -237,7 +240,7 @@ app.get('/download/:filename', (req, res) => {
   const projectName = req.query.Project;
   console.log(filename);
   // 파일이 저장된 디렉토리 경로, 실제 경로에 맞게 수정해야 합니다.
-  const directoryPath = path.join(__dirname, 'uploadFiles', projectName);
+  const directoryPath = path.join(__dirname, '../WebServerFiles', projectName);
   const filePath = path.join(directoryPath, filename);
   
   // 파일 존재 여부를 확인
@@ -262,7 +265,7 @@ app.delete('/deleteFile/:filename', (req, res) => {
   const filename = req.params.filename;
   const projectName = req.query.Project;
   console.log('deleteFile', filename, projectName);
-  const filePath = path.join(__dirname, 'uploadFiles', projectName, filename);
+  const filePath = path.join(__dirname, '../WebServerFiles', projectName, filename);
   
   // 파일 시스템에서 파일 삭제
   fs.unlink(filePath, (err) => {
