@@ -13,6 +13,14 @@ npm install multer
 //24.04.01  session 추가
 npm i express-session
 
+//24.05.21 git추가
+npm install simple-git rimraf
+npm install fs-extra
+
+//24.05.22
+npm i body-parser socket.io
+
+
 //.env 파일을 사용하려면 dotenv 패키지를 설치하고 애플리케이션에서 사용해야 합니다.
 
 package.json 추가 항목
