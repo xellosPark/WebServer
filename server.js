@@ -8,6 +8,16 @@ const jwt = require("jsonwebtoken");
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
+const simpleGit = require('simple-git');
+const socketIo = require('socket.io');
+const http = require('http');
+const { spawn } = require('child_process');
+
+const log = (message) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${message}`);
+};
+
 const fs = require('fs');
 const {
   ////////////////Login///////////////
@@ -20,6 +30,7 @@ const {
     getImpProject,
     boardProject, //get
     boardLoad,  //post
+    loadListIndex,
     addToDoList,
     updateToDoList,
     deleteToDoList,
@@ -36,12 +47,23 @@ const {
     subUpdateBoard,
     updateDateList,
     subBoardPersnal,
+    updateGitPath,
+    loadProjectInfo,
 } = require('./controller/index');
 
 const app = express();
 dotenv.config();
 // 데이터베이스 연결 초기화
 const db = require('./Database');
+
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: '*',
+  }
+});
+
+app.set('io', io);
 
 
 const dir = path.join(__dirname, '../WebServerFiles');
@@ -182,6 +204,7 @@ app.get('/getImpProject', getImpProject);
 app.get('/BoardProject', boardProject);
 app.post('/UpdateUserImpPrj', UpdateUserImpPrj);
 app.post('/Board', boardLoad);
+app.post('/loadListIndex', loadListIndex);
 app.post('/ToDoList', addToDoList);
 app.post('/UpdateToDoList', updateToDoList);
 app.delete('/DeleteToDoList', deleteToDoList);
@@ -197,6 +220,8 @@ app.post('/subLoadBoard', subLoadBoard);
 app.post('/subUpdateBoard', subUpdateBoard);
 app.post('/updateDateList', updateDateList);
 app.get('/subBoardPersnal', subBoardPersnal);
+app.post('/updateGitPath', updateGitPath);
+app.get('/loadProjectInfo', loadProjectInfo);
 
 app.post('/logout', logout);
 
@@ -284,6 +309,113 @@ app.delete('/deleteFile/:filename', (req, res) => {
       });
   });
 });
+
+///////////////////////////
+//git history
+//////////////////////////
+
+app.post('/repo-history', async (req, res) => {
+  const { url } = req.body;
+  console.log('repo-history',url);
+  
+  //const url = 'https://github.com/xellosPark/MyReactProject.git';
+  const repoName = getProjectName(url);
+  // 경로 설정
+  const sourceRepoPath = path.resolve(`../Github-Repo/${repoName}`);
+  try {
+      const io = req.app.get('io');
+      await cloneOrUpdateRepo(url, sourceRepoPath, '소스 레포지토리', io);
+      const commitLog = await getCommitLog(sourceRepoPath);
+      res.json({  result: 'SUCCESS', commitLog });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+const cloneOrUpdateRepo = async (repoUrl, repoPath, repoName, io) => {
+  if (!fs.existsSync(repoPath)) {
+    fs.mkdirSync(repoPath, { recursive: true });
+  }
+
+  const git = simpleGit(repoPath);
+
+  if (!fs.existsSync(path.join(repoPath, '.git'))) {
+    log(`${repoName} 클론 시작: ${repoUrl}`);
+    try {
+      await new Promise((resolve, reject) => {
+        const gitProcess = spawn('git', ['clone', repoUrl, repoPath, '--progress']);
+
+        gitProcess.stdout.on('data', (data) => {
+          log(`[${repoName} 진행 상황] ${data.toString()}`);
+          io.emit('progress', data.toString());
+        });
+
+        gitProcess.stderr.on('data', (data) => {
+          const message = data.toString();
+          if (/error|fatal/i.test(message)) {
+            log(`[${repoName} 오류] ${message}`);
+          } else {
+            log(`[${repoName} 진행 상황] ${message}`);
+          }
+          io.emit('progress', message);
+        });
+
+        gitProcess.on('close', (code) => {
+          if (code === 0) {
+            log(`${repoName} 클론 완료: ${repoPath}`);
+            resolve();
+          } else {
+            reject(new Error(`${repoName} 클론 실패: 종료 코드 ${code}`));
+          }
+        });
+      });
+    } catch (error) {
+      log(`${repoName} 클론 중 오류: ${error.message}`);
+      throw new Error(`${repoName} 클론 중 오류: ${error.message}`);
+    }
+  } else {
+    log(`${repoName} 업데이트 시작: ${repoPath}`);
+    try {
+      await git.pull('origin', 'main');
+      log(`${repoName} 업데이트 완료: ${repoPath}`);
+    } catch (error) {
+      log(`${repoName} 업데이트 중 오류: ${error.message}`);
+      throw new Error(`${repoName} 업데이트 중 오류: ${error.message}`);
+    }
+  }
+};
+
+const getCommitLog = async (repoPath) => {
+  const git = simpleGit(repoPath);
+
+  try {
+    log('커밋 로그 가져오기 시작');
+    const logSummary = await git.log();
+    log('커밋 로그 가져오기 완료');
+    return logSummary.all;
+  } catch (error) {
+    log(`커밋 로그 가져오기 중 오류: ${error.message}`);
+    throw new Error(`커밋 로그 가져오기 중 오류: ${error.message}`);
+  }
+};
+
+const getProjectName = (repoUrl) => {
+    const urlParts = repoUrl.split('/');
+    const repoNameWithGit = urlParts[urlParts.length - 1];
+    const repoName = repoNameWithGit.replace('.git', '');
+    return repoName;
+  };
+
+
+
+// 현재 시간을 가져오는 유틸리티 함수
+function getCurrentTime() {
+  //console.log(`${getCurrentTime()} - 리포지토리 히스토리를 성공적으로 가져왔습니다`); --- 사용방법
+  return new Date().toISOString();
+}
+
+
 
 // 정적 파일 제공을 위한 경로 설정
 app.use(express.static(path.join(__dirname, 'build')));

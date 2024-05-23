@@ -258,7 +258,7 @@ const boardProject = (req, res) => {
 
 const boardLoad = (req, res) => {
     const { projectName } = req.body;
-    console.log(projectName);
+    //console.log(projectName);
     try {
         db.all(`SELECT * FROM ProjectTodoList_TBL where ProjectName = '${projectName}';`, [], (err, rows) => {
             //console.log(rows);
@@ -266,7 +266,6 @@ const boardLoad = (req, res) => {
                 res.status(400).json({ error: err.message });
                 return;
             }
-            //console.log("Load Data", rows);
             res.json({
                 message: 'boardLoad 성공',
                 data: rows,
@@ -279,25 +278,22 @@ const boardLoad = (req, res) => {
 
 const loadListIndex = (req, res) => {
     const { ProjectName, Date, Name, Title, Content, Status } = req.body;
-    console.log('load Index',ProjectName, Date, Name, Title, Content, Status);
+    console.log('loadListIndex',ProjectName, Date, Name, Title, Content, Status);
     // 데이터를 DB에 저장하는 SQL 쿼리
-    const sql = `SELECT "Index" FROM ProjectTodoList_TBL where ProjectName = ? AND Date = ? AND Name = ? AND Title = ? AND Content = ? AND Status = ?`;
-    
+    const sql = `SELECT "Index" FROM ProjectTodoList_TBL where ProjectName = ? AND Date = ? AND Name = ? AND Title = ? AND Content = ?`;
 
     // DB에 데이터 삽입
-    db.run(sql, [ProjectName, Date, Name, Title, Content, Status], (err) => {
+    db.get(sql, [ProjectName, Date, Name, Title, Content], (err, result) => {
         if (err) {
             // 에러 처리
             res.status(400).json({ error: err.message });
             return;
         }
-
-        console.log('insert', req.body);
+        console.log('Load ', result);
         // 성공 응답
         res.json({
             message: 'Success',
-            data: req.body,
-            
+            data: result,
         });
     });
 };
@@ -315,13 +311,11 @@ const addToDoList = (req, res) => {
             res.status(400).json({ error: err.message });
             return;
         }
-
-        console.log('insert', req.body);
+        //console.log('insert ', req.body);
         // 성공 응답
         res.json({
             message: 'Success',
             data: req.body,
-            
         });
     });
 };
@@ -425,7 +419,22 @@ const getUserInfo = (req, res) => {
     const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
     db.get(sql, [userEmail, name], (err, user) => {
         if (err) {
-            return res.status(500).json({ error: err.message });        
+            return res.status(500).json({ error: err.message });
+        }
+
+        if (!user) {
+            return res.status(404).json('user not found');
+        }
+
+        if (user === undefined) {
+            console.log('user정보가 없대 403 ', user);
+            console.log(`입력한 정보 userEmail : ${userEmail}, name : ${name}`);
+            return res.status(500);
+        }
+        if (user.user_mail === undefined) {
+            console.log('user정보가 없대 408 ', user);
+            console.log(`입력한 정보 userEmail : ${userEmail}, name : ${name}`);
+            return res.status(500);
         }
 
         const userData = { email : user.user_mail, name : user.name, team : user.team, rank : user.rank, impProject : user.importProject};
@@ -468,22 +477,22 @@ const loadKanBanList = (req, res) => {
 }
 
 const updataKanBanList = (req, res) => {
-    const { Project, OldContent, Content, Status } = req.body;
-    console.log(req.body);
-    const sql = `UPDATE ProjectKanBanList SET Content = ? WHERE Project = ? AND Content = ?`;
-    db.run(sql, [Content, Project, OldContent], (err) => {
+    const { Index, Project, OldContent, Content } = req.body;
+
+    const sql = `UPDATE ProjectKanBanList SET Content = ? WHERE Project = ? AND Content = ? AND "Order" = ?`;
+    db.run(sql, [Content, Project, OldContent, Index], (err) => {
         if (err) {
             
             return res.status(500).json({ error: err.message });
         }
-        console.log('sss',Project, typeof Project, Content, typeof Content, Status, typeof Status);
+        console.log('이슈 업데이트', Content);
         return res.status(200).json({ message: 'Successfully Update updataKanBanList' });
     });
 }
 
 const deleteKanBanList = (req, res) => {
     const { Project, Content, Order } = req.body;
-    console.log('deleteKanBanList ' ,Project, Content);
+    //console.log('deleteKanBanList ' ,Project, Content);
     const sql = 'DELETE FROM ProjectKanBanList WHERE Project = ? AND "Order" = ?';
     // 데이터베이스 쿼리 실행
     console.log('wlsgod1');
@@ -527,14 +536,13 @@ const getFile = (req, res) => {
 };
 
 const subAddBoard = (req, res) => {
-    const {ProjectName, _ProjectName, Date, ChangeDate, Period, Requester, Name, Title, Content, Status, FieldNum, FieldSubNum} = req.body;
+    const {ProjectName, _ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum} = req.body;
     const subTableName = 'SubDashboard' + _ProjectName;
-    //console.log(`subaddtest ${_ProjectName}`);
 
-    const sql = `INSERT INTO ${subTableName} (ProjectName, Date, ChangeDate, Period, Requester, Name, Title, Content, Status, FieldNum, FieldSubNum) VALUES (?, ?, ?, ?, ?, ?, ? ,? ,?, ?, ?)`;
-    //console.log(`subaddtest ${sql}`);
+    const sql = `INSERT INTO ${subTableName} (ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum) VALUES (?, ?, ?, ?, ? ,? ,?, ?, ?)`;
+
     // DB에 데이터 삽입
-    db.run(sql, [ProjectName, Date, ChangeDate, Period, Requester, Name, Title, Content, Status, FieldNum, FieldSubNum], (err) => {
+    db.run(sql, [ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum], (err) => {
         if (err) {
             // 에러 처리
             console.log(err);
@@ -592,6 +600,32 @@ const subBoardPersnal = (req, res) => {
     });
 };
 
+const updateGitPath = (req, res) => {
+    const { url, ProjectName } = req.body;
+    console.log('업데이트', req.body);
+    const sql = `UPDATE ProjectInfo SET GitURL = ? WHERE ProjectName = ?`;
+    db.run(sql, [url, ProjectName], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        return res.status(200).json({ message: 'Successfully Update subUpdateBoard' });
+    });
+}
+
+const loadProjectInfo = (req, res) => {
+    const { ProjectName } = req.query; //body를 사용하지 않을때는 이렇게
+    console.log(req.query);
+    const sql = `SELECT * FROM ProjectInfo WHERE ProjectName = ?`;
+    db.all(sql, ProjectName, (err, results) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+        }
+        res.status(200).json(results);
+    });
+}
+
 module.exports = {
     login,
     accessToken,
@@ -603,6 +637,7 @@ module.exports = {
     getImpProject,
     UpdateUserImpPrj,
     boardLoad,
+    loadListIndex,
     addToDoList,
     updateToDoList,
     updateDateList,
@@ -618,4 +653,6 @@ module.exports = {
     subLoadBoard,
     subUpdateBoard,
     subBoardPersnal,
+    updateGitPath,
+    loadProjectInfo,
 }
