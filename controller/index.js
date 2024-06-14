@@ -299,13 +299,13 @@ const loadListIndex = (req, res) => {
 };
 
 const addToDoList = (req, res) => {
-    const { ProjectName, Date, Period, Requester, Name, Title, Content, Status } = req.body;
+    const { ProjectName, Date, Period, Requester, ReqManager, Name, Title, Content, Status } = req.body;
     //console.log('addToDoList',ProjectName, Date, Name, Title, Content, Status);
     // 데이터를 DB에 저장하는 SQL 쿼리
-    const sql = `INSERT INTO ProjectTodoList_TBL (ProjectName, Date, ChangeDate, Period, Requester, Name, Title, Content, Status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO ProjectTodoList_TBL (ProjectName, Date, ChangeDate, Period, Requester, ReqManager, Name, Title, Content, Status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     // DB에 데이터 삽입
-    db.run(sql, [ProjectName, Date, null, Period, Requester, Name, Title, Content, Status], (err) => {
+    db.run(sql, [ProjectName, Date, null, Period, Requester, ReqManager, Name, Title, Content, Status], (err) => {
         if (err) {
             // 에러 처리
             res.status(400).json({ error: err.message });
@@ -437,7 +437,7 @@ const getUserInfo = (req, res) => {
             return res.status(500);
         }
 
-        const userData = { email : user.user_mail, name : user.name, team : user.team, rank : user.rank, impProject : user.importProject};
+        const userData = { email : user.user_mail, name : user.name, team : user.team, rank : user.rank, impProject : user.importProject, custom : user.Custom};
         return res.status(200).json({userData});
     });
 }
@@ -609,7 +609,20 @@ const updateGitPath = (req, res) => {
             console.log(err);
             return res.status(500).json({ error: err.message });
         }
-        return res.status(200).json({ message: 'Successfully Update subUpdateBoard' });
+        return res.status(200).json({ message: 'Successfully Update GitPath' });
+    });
+}
+
+const updateGitPagePath = (req, res) => {
+    const { url, ProjectName } = req.body;
+    console.log('업데이트', req.body);
+    const sql = `UPDATE ProjectInfo SET GitPageURL = ? WHERE ProjectName = ?`;
+    db.run(sql, [url, ProjectName], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        return res.status(200).json({ message: 'Successfully Update GitPagePath' });
     });
 }
 
@@ -623,6 +636,33 @@ const loadProjectInfo = (req, res) => {
             return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
         }
         res.status(200).json(results);
+    });
+}
+
+const updateUserInfo = (req, res) => {
+    const { Email, Custom } = req.body;
+    console.log('업데이트 631', req.body);
+    const sql = `UPDATE UserInfo SET Custom = ? WHERE user_mail = ?`;
+    db.run(sql, [Custom, Email], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        return res.status(200).json({ message: 'Successfully Update updateUserInfo Custom' });
+    });
+
+};
+
+const updateStep = (req, res) => {
+    const { ProjectName, Step } = req.body;
+    console.log('업데이트 645', req.body);
+    const sql = `UPDATE ProjectInfo SET Status = ? WHERE ProjectName = ?`;
+    db.run(sql, [Step, ProjectName], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        return res.status(200).json({ message: 'Successfully Update updateUserInfo Step' });
     });
 }
 
@@ -654,5 +694,8 @@ module.exports = {
     subUpdateBoard,
     subBoardPersnal,
     updateGitPath,
+    updateGitPagePath,
     loadProjectInfo,
+    updateUserInfo,
+    updateStep,
 }

@@ -48,7 +48,10 @@ const {
     updateDateList,
     subBoardPersnal,
     updateGitPath,
+    updateGitPagePath,
     loadProjectInfo,
+    updateUserInfo,
+    updateStep,
 } = require('./controller/index');
 
 const app = express();
@@ -221,7 +224,10 @@ app.post('/subUpdateBoard', subUpdateBoard);
 app.post('/updateDateList', updateDateList);
 app.get('/subBoardPersnal', subBoardPersnal);
 app.post('/updateGitPath', updateGitPath);
+app.post('/updateGitPagePath', updateGitPagePath);
 app.get('/loadProjectInfo', loadProjectInfo);
+app.post('/updateUserInfo', updateUserInfo);
+app.post('/updateStep', updateStep);
 
 app.post('/logout', logout);
 
@@ -377,7 +383,24 @@ const cloneOrUpdateRepo = async (repoUrl, repoPath, repoName, io) => {
   } else {
     log(`${repoName} 업데이트 시작: ${repoPath}`);
     try {
-      await git.pull('origin', 'main');
+      const branches = await git.branch(['-r']);
+      console.log('branches', branches);
+      if (branches.all.includes('origin/main')) {
+        await git.pull('origin', 'main');
+        console.log('Successfully pulled main branch.');
+    } else {
+        console.log('Main branch does not exist on remote.');
+    }
+
+    if (branches.all.includes('origin/master')) {
+        await git.pull('origin', 'master');
+        console.log('Successfully pulled master branch.');
+    } else {
+        console.log('Master branch does not exist on remote.');
+    }
+
+
+      //await git.pull('origin', 'main');
       log(`${repoName} 업데이트 완료: ${repoPath}`);
     } catch (error) {
       log(`${repoName} 업데이트 중 오류: ${error.message}`);
