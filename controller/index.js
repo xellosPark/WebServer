@@ -14,7 +14,7 @@ const SECRET_KEY = crypto.randomBytes(64).toString('hex');
 const login = (req, res, next) => {
     const isProduction = process.env.NODE_ENV === 'production';
     const { email, password } = req.body;
-    console.log('로그인 진행',email, password);
+    console.log('로그인 진행', email, password);
 
     // 데이터베이스에서 사용자 조회 (가정)
     const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND phon_number = ?';
@@ -35,16 +35,16 @@ const login = (req, res, next) => {
         // 비밀번호 검증 로직 필요 (생략)
 
         const sql = `UPDATE UserInfo SET RefreshToken = '' WHERE user_mail = ?`;
-            // DB에 데이터 삽입
-            db.run(sql, [email], (err) => {
-                if (err) {
-                    // 에러 처리
-                    console.log(`실페 ${err}`);
-                    res.status(400).json({ error: err.message });
-                    return;
-                }
-                // 성공
-            });
+        // DB에 데이터 삽입
+        db.run(sql, [email], (err) => {
+            if (err) {
+                // 에러 처리
+                console.log(`실페 ${err}`);
+                res.status(400).json({ error: err.message });
+                return;
+            }
+            // 성공
+        });
 
         try {
             const accessToken = jwt.sign(
@@ -53,7 +53,7 @@ const login = (req, res, next) => {
                     name: user.name
                 },
                 ACCESS_SECRET,
-                { expiresIn : '1h' } //expiresIn
+                { expiresIn: '1h' } //expiresIn
             );
 
             const refreshToken = jwt.sign(
@@ -62,7 +62,7 @@ const login = (req, res, next) => {
                     name: user.name
                 },
                 REFRESH_SECRET,
-                { expiresIn: '5h'}
+                { expiresIn: '5h' }
             );
 
             // res.cookie('accessToken', accessToken, {
@@ -96,14 +96,14 @@ const login = (req, res, next) => {
                 // 성공
             });
 
-            const userData = { email: user.user_mail, name : user.name, team : user.team, rank : user.rank};
+            const userData = { email: user.user_mail, name: user.name, team: user.team, rank: user.rank };
             // 쿠키에 토큰 저장 및 응답 전송
             //console.log('accessToken 생성');
             //res.cookie('accessToken', accessToken, { httpOnly:true, secure: isProduction, sameSite: "None" });
             //res.cookie('refreshToken', refreshToken, { httpOnly:true, secure: isProduction, // HTTPS(운영 환경)를 사용할 경우에만 true로 설정
             //    sameSite: "None"//sameSite: 'strict',
-                //path: '/refresh-token', //refresh-token 이걸로 path등록하면 로그아웃할때 /logout이 아닌 /refresh-token 사용해야되는것으로 보임
-                //모든 경로에서 쿠키가 전송되도록 변경함
+            //path: '/refresh-token', //refresh-token 이걸로 path등록하면 로그아웃할때 /logout이 아닌 /refresh-token 사용해야되는것으로 보임
+            //모든 경로에서 쿠키가 전송되도록 변경함
             //});
             console.log('토큰 발급 완료');
 
@@ -256,10 +256,56 @@ const boardProject = (req, res) => {
     });
 };
 
-const boardLoad = (req, res) => {
-    const { projectName } = req.body;
+const boardLoad = async (req, res) => {
+    const { projectName, site } = req.body;
     //console.log(projectName);
-    try {
+    
+    if (projectName === "All") {
+        let projectInfo = [];
+
+        try {
+            projectInfo = await new Promise((resolve, reject) => { //resolve와 reject는 Promise 객체의 두 가지 함수 매개변수로, 비동기 작업이 완료되었을 때 호출
+                                            //resolve(value)는 Promise가 성공적으로 완료되었음을 나타내며, value는 Promise의 결과값
+                                            //reject(reason)는 Promise가 실패했음을 나타내며, reason은 에러 또는 실패의 이유
+                const sql = `SELECT ProjectName FROM ProjectInfo WHERE Site = ?`;
+                db.all(sql, [site], (err, results) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(results);
+                });
+            });
+
+            if (projectInfo === undefined || projectInfo?.length === 0)
+                return res.status(500).json(`${site}에 맞는 해당 Project 없음`);
+    
+    
+            const projectNameValues = projectInfo.map(project => project.ProjectName);
+            const placeholders = projectNameValues.map(() => '?').join(',');
+            //console.log('results', projectInfo, projectNameValues, placeholders);
+            //const selSql = `SELECT * FROM ProjectTodoList_TBL WHERE Name =? AND ProjectName IN (${placeholders});`;
+            const rows = await new Promise((resolve, reject) => {
+                const selSql = `SELECT * FROM ProjectTodoList_TBL WHERE ProjectName IN (${placeholders});`;
+                db.all(selSql, projectNameValues, (err, rows) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(rows);
+                });
+            });
+
+            //console.log('rows', rows);
+            res.json({
+                message: 'boardLoad 성공',
+                data: rows,
+            });
+
+        } catch (error) {
+            console.log(err);
+        res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+        }
+        
+    } else {
         db.all(`SELECT * FROM ProjectTodoList_TBL where ProjectName = '${projectName}';`, [], (err, rows) => {
             //console.log(rows);
             if (err) {
@@ -271,14 +317,12 @@ const boardLoad = (req, res) => {
                 data: rows,
             })
         });
-    } catch (error) {
-        console.log(`${error}`);
     }
 };
 
 const loadListIndex = (req, res) => {
     const { ProjectName, Date, Name, Title, Content, Status } = req.body;
-    console.log('loadListIndex',ProjectName, Date, Name, Title, Content, Status);
+    console.log('loadListIndex', ProjectName, Date, Name, Title, Content, Status);
     // 데이터를 DB에 저장하는 SQL 쿼리
     const sql = `SELECT "Index" FROM ProjectTodoList_TBL where ProjectName = ? AND Date = ? AND Name = ? AND Title = ? AND Content = ?`;
 
@@ -415,7 +459,7 @@ const getUserInfo = (req, res) => {
     //console.log('getuserinfo 들어옴');
     const { userEmail, name } = req.query;
     //console.log('getuserinfo', userEmail, name );
-//    console.log(`userinfo :  ${userEmail}, ${name}`);
+    //    console.log(`userinfo :  ${userEmail}, ${name}`);
     const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
     db.get(sql, [userEmail, name], (err, user) => {
         if (err) {
@@ -437,8 +481,8 @@ const getUserInfo = (req, res) => {
             return res.status(500);
         }
 
-        const userData = { email : user.user_mail, name : user.name, team : user.team, rank : user.rank, impProject : user.importProject, custom : user.Custom};
-        return res.status(200).json({userData});
+        const userData = { email: user.user_mail, name: user.name, team: user.team, rank: user.rank, impProject: user.importProject, custom: user.Custom };
+        return res.status(200).json({ userData });
     });
 }
 
@@ -482,7 +526,7 @@ const updataKanBanList = (req, res) => {
     const sql = `UPDATE ProjectKanBanList SET Content = ? WHERE Project = ? AND Content = ? AND "Order" = ?`;
     db.run(sql, [Content, Project, OldContent, Index], (err) => {
         if (err) {
-            
+
             return res.status(500).json({ error: err.message });
         }
         console.log('이슈 업데이트', Content);
@@ -536,7 +580,7 @@ const getFile = (req, res) => {
 };
 
 const subAddBoard = (req, res) => {
-    const {ProjectName, _ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum} = req.body;
+    const { ProjectName, _ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum } = req.body;
     const subTableName = 'SubDashboard' + _ProjectName;
 
     const sql = `INSERT INTO ${subTableName} (ProjectName, Date, ChangeDate, Name, Title, Content, Status, FieldNum, FieldSubNum) VALUES (?, ?, ?, ?, ? ,? ,?, ?, ?)`;
@@ -558,17 +602,65 @@ const subAddBoard = (req, res) => {
 }
 
 const subLoadBoard = (req, res) => {
-    const { ProjectName, _ProjectName } = req.body;
+    const { ProjectName, _ProjectName, Site } = req.body;
     //console.log(req.query);
     const subTableName = 'SubDashboard' + _ProjectName;
-    const sql = `SELECT * FROM ${subTableName} WHERE ProjectName = ?`;
-    db.all(sql,ProjectName, (err, results) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
-        }
-        res.status(200).json(results);
-    });
+    if (ProjectName === "All") {
+        db.all('SELECT ProjectName FROM ProjectInfo WHERE Site = ?', [Site], (err, rows) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+
+            const projectNames = rows.map(row => row.ProjectName);
+            if (projectNames.length === 0) {
+                res.json({ data: [] });
+                return;
+            }
+
+            // 여러 테이블에서 데이터를 가져와 병합
+            const queries = projectNames.map(name => {
+
+                const _ProjectName = name.replace(/ /g, '_');
+                const index = _ProjectName.indexOf('(');
+                if (index !== -1) {
+                    project = _ProjectName.substring(0, index);
+                }
+                else project = _ProjectName; // '(' 기호가 없는 경우, 전체 텍스트 반환
+
+                const tableName = `SubDashboard${project}`;
+                return new Promise((resolve, reject) => {
+                    const sql = `SELECT * FROM ${tableName}`;
+                    db.all(sql, (err, rows) => {
+                        if (err) {
+                            resolve([]); // 테이블이 없는 경우 빈 배열 반환
+                        } else {
+                            resolve(rows);
+                        }
+                    });
+                });
+            });
+
+            Promise.all(queries)
+                .then(results => {
+                    const mergedResults = [].concat(...results);
+                    res.json({ data: mergedResults });
+                })
+                .catch(err => {
+                    res.status(500).json({ error: err.message });
+                });
+        });
+
+    } else {
+        const sql = `SELECT * FROM ${subTableName} WHERE ProjectName = ?`;
+        db.all(sql, ProjectName, (err, results) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+            }
+            res.status(200).json(results);
+        });
+    }
 }
 
 const subUpdateBoard = (req, res) => {
@@ -627,16 +719,28 @@ const updateGitPagePath = (req, res) => {
 }
 
 const loadProjectInfo = (req, res) => {
-    const { ProjectName } = req.query; //body를 사용하지 않을때는 이렇게
+    const { ProjectName, Site } = req.query; //body를 사용하지 않을때는 이렇게
     console.log(req.query);
-    const sql = `SELECT * FROM ProjectInfo WHERE ProjectName = ?`;
-    db.all(sql, ProjectName, (err, results) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
-        }
-        res.status(200).json(results);
-    });
+    if (ProjectName === "All") {
+        const sql = `SELECT * FROM ProjectInfo WHERE Site = ?`;
+        db.all(sql, Site, (err, results) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+            }
+            //console.log('results', results);
+            res.status(200).json(results);
+        });
+    } else {
+        const sql = `SELECT * FROM ProjectInfo WHERE ProjectName = ?`;
+        db.all(sql, ProjectName, (err, results) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+            }
+            res.status(200).json(results);
+        });
+    }
 }
 
 const updateUserInfo = (req, res) => {
@@ -662,6 +766,34 @@ const updateStep = (req, res) => {
             console.log(err);
             return res.status(500).json({ error: err.message });
         }
+        return res.status(200).json({ message: 'Successfully Update updateUserInfo Step' });
+    });
+}
+
+const addProjectInfo = (req, res) => {
+    const { ProjectName, Period, Users, Status, PM, Site } = req.body;
+    console.log("진행 : ", req.body);
+    const sql = `INSERT INTO ProjectInfo (ProjectName, Period, Users, Status, PM, GitURL, GitPageURL, Site) VALUES (?, ?, ?, ?, ?, null, null, ?)`;
+    db.run(sql, [ProjectName, Period, Users, Status, PM, Site], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log("진행 완료");
+        return res.status(200).json({ message: 'Successfully Update updateUserInfo Step' });
+    });
+}
+
+const updateProjectInfo = (req, res) => {
+    const { ProjectName, Period, Users, Status, PM, Site } = req.body;
+    console.log("진행 : ", req.body);
+    const sql = `UPDATE ProjectInfo SET Period = ?, Users = ?, Status = ?, PM = ?, GitURL = ?, GitPageURL = ?, Site = ? WHERE ProjectName = ?`;
+    db.run(sql, [ProjectName, Period, Users, Status, PM, Site], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log("진행 완료");
         return res.status(200).json({ message: 'Successfully Update updateUserInfo Step' });
     });
 }
@@ -698,4 +830,5 @@ module.exports = {
     loadProjectInfo,
     updateUserInfo,
     updateStep,
+    addProjectInfo,
 }
