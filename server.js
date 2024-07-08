@@ -53,6 +53,7 @@ const {
     updateUserInfo,
     updateStep,
     addProjectInfo,
+    updateProjectInfo,
 } = require('./controller/index');
 
 const app = express();
@@ -230,6 +231,7 @@ app.get('/loadProjectInfo', loadProjectInfo);
 app.post('/updateUserInfo', updateUserInfo);
 app.post('/updateStep', updateStep);
 app.post('/addProjectInfo', addProjectInfo);
+app.post('/updateProjectInfo', updateProjectInfo);
 
 app.post('/logout', logout);
 

@@ -481,7 +481,7 @@ const getUserInfo = (req, res) => {
             return res.status(500);
         }
 
-        const userData = { email: user.user_mail, name: user.name, team: user.team, rank: user.rank, impProject: user.importProject, custom: user.Custom };
+        const userData = { email: user.user_mail, name: user.name, team: user.team, rank: user.rank, impProject: user.importProject, custom: user.Custom, manager: user.Manager };
         return res.status(200).json({ userData });
     });
 }
@@ -785,10 +785,10 @@ const addProjectInfo = (req, res) => {
 }
 
 const updateProjectInfo = (req, res) => {
-    const { ProjectName, Period, Users, Status, PM, Site } = req.body;
+    const { ProjectName, Period, Users, Status, PM, Site, View } = req.body;
     console.log("진행 : ", req.body);
-    const sql = `UPDATE ProjectInfo SET Period = ?, Users = ?, Status = ?, PM = ?, GitURL = ?, GitPageURL = ?, Site = ? WHERE ProjectName = ?`;
-    db.run(sql, [ProjectName, Period, Users, Status, PM, Site], (err) => {
+    const sql = `UPDATE ProjectInfo SET Period = ?, Users = ?, Status = ?, PM = ?, Site = ?, View = ? WHERE ProjectName = ?`;
+    db.run(sql, [ProjectName, Period, Users, Status, PM, Site, View], (err) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });
@@ -831,4 +831,5 @@ module.exports = {
     updateUserInfo,
     updateStep,
     addProjectInfo,
+    updateProjectInfo,
 }
