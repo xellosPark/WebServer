@@ -54,6 +54,9 @@ const {
     updateStep,
     addProjectInfo,
     updateProjectInfo,
+    addTeamProject,
+    updateTeamProject,
+    getTeamProject,
 } = require('./controller/index');
 
 const app = express();
@@ -232,6 +235,9 @@ app.post('/updateUserInfo', updateUserInfo);
 app.post('/updateStep', updateStep);
 app.post('/addProjectInfo', addProjectInfo);
 app.post('/updateProjectInfo', updateProjectInfo);
+app.post('/addTeamProject', addTeamProject);
+app.post('/updateTeamProject', updateTeamProject);
+app.get('/getTeamProject', getTeamProject);
 
 app.post('/logout', logout);
 

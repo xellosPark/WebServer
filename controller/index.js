@@ -458,32 +458,44 @@ const UpdateUserImpPrj = (req, res) => {
 const getUserInfo = (req, res) => {
     //console.log('getuserinfo 들어옴');
     const { userEmail, name } = req.query;
-    //console.log('getuserinfo', userEmail, name );
+    console.log('getuserinfo', userEmail, name );
     //    console.log(`userinfo :  ${userEmail}, ${name}`);
-    const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
-    db.get(sql, [userEmail, name], (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
+    if (userEmail !== 'All') {
+        const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
+        db.get(sql, [userEmail, name], (err, user) => {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
 
-        if (!user) {
-            return res.status(404).json('user not found');
-        }
+            if (!user) {
+                return res.status(404).json('user not found');
+            }
 
-        if (user === undefined) {
-            console.log('user정보가 없대 403 ', user);
-            console.log(`입력한 정보 userEmail : ${userEmail}, name : ${name}`);
-            return res.status(500);
-        }
-        if (user.user_mail === undefined) {
-            console.log('user정보가 없대 408 ', user);
-            console.log(`입력한 정보 userEmail : ${userEmail}, name : ${name}`);
-            return res.status(500);
-        }
+            if (user === undefined) {
+                console.log('user정보가 없대 403 ', user);
+                console.log(`입력한 정보 userEmail : ${userEmail}, name : ${name}`);
+                return res.status(500);
+            }
+            if (user.user_mail === undefined) {
+                console.log('user정보가 없대 408 ', user);
+                console.log(`입력한 정보 userEmail : ${userEmail}, name : ${name}`);
+                return res.status(500);
+            }
 
-        const userData = { email: user.user_mail, name: user.name, team: user.team, rank: user.rank, impProject: user.importProject, custom: user.Custom, manager: user.Manager };
-        return res.status(200).json({ userData });
-    });
+            const userData = { email: user.user_mail, name: user.name, team: user.team, rank: user.rank, impProject: user.importProject, custom: user.Custom, manager: user.Manager };
+            return res.status(200).json({ userData });
+        });
+    } else {
+        const sql = 'SELECT name FROM UserInfo WHERE team = ?';
+        db.all(sql, [name], (err, user) => {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            //const userData = { name: user.name };
+            console.log('userData', user);
+            return res.status(200).json({ user });
+        });
+    }
 }
 
 const addKanBanList = (req, res) => {
@@ -787,7 +799,7 @@ const addProjectInfo = (req, res) => {
 const updateProjectInfo = (req, res) => {
     const { ProjectName, Period, Users, Status, PM, Site, View } = req.body;
     console.log("진행 : ", req.body);
-    const sql = `UPDATE ProjectInfo SET Period = ?, Users = ?, Status = ?, PM = ?, Site = ?, View = ? WHERE ProjectName = ?`;
+    const sql = `UPDATE ProjectInfo SET Period = ?, Users = ?, Status = ?, PM = ?, View = ? WHERE ProjectName = ? AND Site = ?`;
     db.run(sql, [ProjectName, Period, Users, Status, PM, Site, View], (err) => {
         if (err) {
             console.log(err);
@@ -795,6 +807,53 @@ const updateProjectInfo = (req, res) => {
         }
         console.log("진행 완료");
         return res.status(200).json({ message: 'Successfully Update updateUserInfo Step' });
+    });
+}
+
+const addTeamProject = (req, res) => {
+    const { ProjectName, Date, Status, Users, StartMonth, EndMonth, ProopsMM, Manager, Site } = req.body;
+    console.log("진행 : ", req.body);
+    const sql = `INSERT INTO TeamProject (Date, ProjectName, Status, Users, Manager, ProopsMM, StartMonth, EndMonth, Site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    db.run(sql, [Date, ProjectName, Status, Users, Manager, ProopsMM, StartMonth, EndMonth, Site], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log("진행 완료");
+        return res.json({
+            message: 'Success',
+        });
+    });
+}
+
+const updateTeamProject = (req, res) => {
+    const { ProjectName, Status, Users, StartMonth, EndMonth, ProopsMM, Manager, Site } = req.body;
+    console.log("진행 : ", req.body);
+    const sql = `UPDATE TeamProject SET Status = ? Users = ? Manager = ? ProopsMM = ? StartMonth = ? EndMonth = ? WHERE ProjectName = ? AND Site = ?`;
+
+    db.run(sql, [Status, Users, Manager, ProopsMM, StartMonth, EndMonth, ProjectName, Site], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log("진행 완료");
+        return res.json({
+            message: 'Success',
+        });
+    });
+}
+
+const getTeamProject = (req, res) => {
+    const { Site } = req.query;
+    console.log("getTeamProject 진행 : ", req.query);
+    const sql = 'SELECT * FROM TeamProject WHERE Site = ?';
+    db.all(sql, Site, (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        console.log("getTeamProject 진행 완료", results);
+        res.status(200).json(results);
     });
 }
 
@@ -832,4 +891,7 @@ module.exports = {
     updateStep,
     addProjectInfo,
     updateProjectInfo,
+    addTeamProject,
+    updateTeamProject,
+    getTeamProject,
 }
