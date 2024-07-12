@@ -799,8 +799,19 @@ const addProjectInfo = (req, res) => {
 const updateProjectInfo = (req, res) => {
     const { ProjectName, Period, Users, Status, PM, Site, View } = req.body;
     console.log("진행 : ", req.body);
-    const sql = `UPDATE ProjectInfo SET Period = ?, Users = ?, Status = ?, PM = ?, View = ? WHERE ProjectName = ? AND Site = ?`;
-    db.run(sql, [ProjectName, Period, Users, Status, PM, Site, View], (err) => {
+    if (View !== undefined) {
+        const sql = `UPDATE ProjectInfo SET View = ? WHERE ProjectName = ? AND Site = ?`;
+        db.run(sql, [View , ProjectName, Site], (err) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ error: err.message });
+            }
+            console.log("진행 완료");
+            return res.status(200).json({ message: 'Successfully Update updateUserInfo Step' });
+        });
+    } else {
+        const sql = `UPDATE ProjectInfo SET Period = ?, Users = ?, Status = ?, PM = ? WHERE ProjectName = ? AND Site = ?`;
+    db.run(sql, [Period, Users, Status, PM, ProjectName, Site], (err) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });
@@ -808,6 +819,8 @@ const updateProjectInfo = (req, res) => {
         console.log("진행 완료");
         return res.status(200).json({ message: 'Successfully Update updateUserInfo Step' });
     });
+    }
+    
 }
 
 const addTeamProject = (req, res) => {
@@ -830,9 +843,26 @@ const addTeamProject = (req, res) => {
 const updateTeamProject = (req, res) => {
     const { ProjectName, Status, Users, StartMonth, EndMonth, ProopsMM, Manager, Site } = req.body;
     console.log("진행 : ", req.body);
-    const sql = `UPDATE TeamProject SET Status = ? Users = ? Manager = ? ProopsMM = ? StartMonth = ? EndMonth = ? WHERE ProjectName = ? AND Site = ?`;
+    const sql = `UPDATE TeamProject SET Status = ?, Users = ?, Manager = ?, ProopsMM = ?, StartMonth = ?, EndMonth = ? WHERE ProjectName = ? AND Site = ?`;
 
     db.run(sql, [Status, Users, Manager, ProopsMM, StartMonth, EndMonth, ProjectName, Site], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log("진행 완료");
+        return res.json({
+            message: 'Success',
+        });
+    });
+}
+
+const deleteTeamProject = (req, res) => {
+    const { ProjectName, Site } = req.body;
+    console.log("진행 : ", req.body);
+    const sql = 'DELETE FROM TeamProject WHERE ProjectName = ? AND Site = ?';
+
+    db.run(sql, [ProjectName, Site], (err) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });
@@ -893,5 +923,6 @@ module.exports = {
     updateProjectInfo,
     addTeamProject,
     updateTeamProject,
+    deleteTeamProject,
     getTeamProject,
 }
