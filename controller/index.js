@@ -783,10 +783,10 @@ const updateStep = (req, res) => {
 }
 
 const addProjectInfo = (req, res) => {
-    const { ProjectName, Period, Users, Status, PM, Site } = req.body;
+    const { ProjectName, Period, Users, Status, PM, Site, Field } = req.body;
     console.log("진행 : ", req.body);
-    const sql = `INSERT INTO ProjectInfo (ProjectName, Period, Users, Status, PM, GitURL, GitPageURL, Site) VALUES (?, ?, ?, ?, ?, null, null, ?)`;
-    db.run(sql, [ProjectName, Period, Users, Status, PM, Site], (err) => {
+    const sql = `INSERT INTO ProjectInfo (ProjectName, Period, Users, Status, PM, GitURL, GitPageURL, Site, Field) VALUES (?, ?, ?, ?, ?, null, null, ?, ?)`;
+    db.run(sql, [ProjectName, Period, Users, Status, PM, Site, Field], (err) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });
@@ -797,8 +797,8 @@ const addProjectInfo = (req, res) => {
 }
 
 const updateProjectInfo = (req, res) => {
-    const { ProjectName, Period, Users, Status, PM, Site, View } = req.body;
-    console.log("진행 : ", req.body);
+    const { ProjectName, Period, Users, Status, PM, Site, View, Field } = req.body;
+    console.log("updateProjectInfo 진행 : ", req.body);
     if (View !== undefined) {
         const sql = `UPDATE ProjectInfo SET View = ? WHERE ProjectName = ? AND Site = ?`;
         db.run(sql, [View , ProjectName, Site], (err) => {
@@ -810,13 +810,13 @@ const updateProjectInfo = (req, res) => {
             return res.status(200).json({ message: 'Successfully Update updateUserInfo Step' });
         });
     } else {
-        const sql = `UPDATE ProjectInfo SET Period = ?, Users = ?, Status = ?, PM = ? WHERE ProjectName = ? AND Site = ?`;
-    db.run(sql, [Period, Users, Status, PM, ProjectName, Site], (err) => {
+        const sql = `UPDATE ProjectInfo SET Period = ?, Users = ?, Status = ?, PM = ?, Field = ? WHERE ProjectName = ? AND Site = ?`;
+    db.run(sql, [Period, Users, Status, PM, Field, ProjectName, Site], (err, result) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });
         }
-        console.log("진행 완료");
+        console.log("updateProjectInfo 진행 완료", result);
         return res.status(200).json({ message: 'Successfully Update updateUserInfo Step' });
     });
     }
@@ -845,12 +845,12 @@ const updateTeamProject = (req, res) => {
     console.log("진행 : ", req.body);
     const sql = `UPDATE TeamProject SET Status = ?, Users = ?, Manager = ?, ProopsMM = ?, StartMonth = ?, EndMonth = ? WHERE ProjectName = ? AND Site = ?`;
 
-    db.run(sql, [Status, Users, Manager, ProopsMM, StartMonth, EndMonth, ProjectName, Site], (err) => {
+    db.run(sql, [Status, Users, Manager, ProopsMM, StartMonth, EndMonth, ProjectName, Site], (err, results) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });
         }
-        console.log("진행 완료");
+        console.log("진행 완료", results);
         return res.json({
             message: 'Success',
         });
