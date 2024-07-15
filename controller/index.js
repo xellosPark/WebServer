@@ -824,11 +824,11 @@ const updateProjectInfo = (req, res) => {
 }
 
 const addTeamProject = (req, res) => {
-    const { ProjectName, Date, Status, Users, StartMonth, EndMonth, ProopsMM, Manager, Site } = req.body;
+    const { ProjectName, Date, Status, Users, StartMonth, StartWeek, EndMonth, EndWeek, ProopsMM, Manager, Site } = req.body;
     console.log("진행 : ", req.body);
-    const sql = `INSERT INTO TeamProject (Date, ProjectName, Status, Users, Manager, ProopsMM, StartMonth, EndMonth, Site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO TeamProject (Date, ProjectName, Status, Users, Manager, ProopsMM, StartMonth, StartWeek, EndMonth, EndWeek, Site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-    db.run(sql, [Date, ProjectName, Status, Users, Manager, ProopsMM, StartMonth, EndMonth, Site], (err) => {
+    db.run(sql, [Date, ProjectName, Status, Users, Manager, ProopsMM, StartMonth, StartWeek, EndMonth, EndWeek, Site], (err) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });
@@ -841,11 +841,11 @@ const addTeamProject = (req, res) => {
 }
 
 const updateTeamProject = (req, res) => {
-    const { ProjectName, Status, Users, StartMonth, EndMonth, ProopsMM, Manager, Site } = req.body;
+    const { ProjectName, Status, Users, StartMonth, StartWeek, EndMonth, EndWeek, ProopsMM, Manager, Site } = req.body;
     console.log("진행 : ", req.body);
-    const sql = `UPDATE TeamProject SET Status = ?, Users = ?, Manager = ?, ProopsMM = ?, StartMonth = ?, EndMonth = ? WHERE ProjectName = ? AND Site = ?`;
+    const sql = `UPDATE TeamProject SET Status = ?, Users = ?, Manager = ?, ProopsMM = ?, StartMonth = ?, StartWeek = ?, EndMonth = ?, EndWeek = ? WHERE ProjectName = ? AND Site = ?`;
 
-    db.run(sql, [Status, Users, Manager, ProopsMM, StartMonth, EndMonth, ProjectName, Site], (err, results) => {
+    db.run(sql, [Status, Users, Manager, ProopsMM, StartMonth, StartWeek, EndMonth, EndWeek, ProjectName, Site], (err, results) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });
