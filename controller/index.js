@@ -492,7 +492,7 @@ const getUserInfo = (req, res) => {
                 return res.status(500).json({ error: err.message });
             }
             //const userData = { name: user.name };
-            console.log('userData', user);
+            //console.log('userData', user);
             return res.status(200).json({ user });
         });
     }
