@@ -791,9 +791,45 @@ const addProjectInfo = (req, res) => {
             console.log(err);
             return res.status(500).json({ error: err.message });
         }
-        console.log("진행 완료");
-        return res.status(200).json({ message: 'Successfully Update updateUserInfo Step' });
+
+        // 두 번째 SQL 쿼리
+    let project = ''
+    const _ProjectName = ProjectName.replace(/ /g, '_');
+    const index = _ProjectName.indexOf('(');
+    if (index !== -1) {
+        project = _ProjectName.substring(0, index);
+    } else {
+        project = _ProjectName; // '(' 기호가 없는 경우, 전체 텍스트 반환
+    }
+
+    const subTableName = 'SubDashboard' + project;
+    const subSql = `
+        CREATE TABLE ${subTableName} (
+            "Index" INTEGER UNIQUE,
+            "ProjectName" TEXT NOT NULL,
+            "Date" DATE,
+            "ChangeDate" DATE,
+            "Name" TEXT NOT NULL,
+            "Title" TEXT NOT NULL,
+            "Content" TEXT,
+            "Status" TEXT,
+            "FieldNum" INTEGER,
+            "FieldSubNum" INTEGER,
+            PRIMARY KEY("Index")
+        );
+    `;
+
+    db.run(subSql, (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log("Dashboard, SubDashboard 테이블 생성 완료");
+        return res.status(200).json({ message: 'Successfully created project and dashboard sub-dashboard table' });
     });
+    });
+
+    
 }
 
 const updateProjectInfo = (req, res) => {
@@ -882,7 +918,7 @@ const getTeamProject = (req, res) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        console.log("getTeamProject 진행 완료", results);
+        //console.log("getTeamProject 진행 완료", results);
         res.status(200).json(results);
     });
 }
