@@ -486,7 +486,7 @@ const getUserInfo = (req, res) => {
             return res.status(200).json({ userData });
         });
     } else {
-        const sql = 'SELECT name FROM UserInfo WHERE team = ?';
+        const sql = 'SELECT name, rank FROM UserInfo WHERE team = ?';
         db.all(sql, [name], (err, user) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
