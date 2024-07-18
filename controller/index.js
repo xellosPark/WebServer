@@ -245,7 +245,7 @@ const dbconnect = (req, res) => {
 const boardProject = (req, res) => {
     const { Name } = req.query; //body를 사용하지 않을때는 이렇게
     //console.log(req.query);
-    const sql = 'SELECT * FROM ProjectInfo WHERE Users LIKE?';
+    const sql = 'SELECT * FROM ProjectInfo WHERE View = 1 AND Users LIKE?';
     const values = [`%${Name}%`];
     db.all(sql, values, (err, results) => {
         if (err) {
@@ -458,10 +458,10 @@ const UpdateUserImpPrj = (req, res) => {
 const getUserInfo = (req, res) => {
     //console.log('getuserinfo 들어옴');
     const { userEmail, name } = req.query;
-    console.log('getuserinfo', userEmail, name );
+    //console.log('getuserinfo', userEmail, name );
     //    console.log(`userinfo :  ${userEmail}, ${name}`);
     if (userEmail !== 'All') {
-        const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
+        const sql = 'SELECT * FROM UserInfo WHERE user_mail = ?';// AND name = ?';
         db.get(sql, [userEmail, name], (err, user) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
@@ -473,12 +473,12 @@ const getUserInfo = (req, res) => {
 
             if (user === undefined) {
                 console.log('user정보가 없대 403 ', user);
-                console.log(`입력한 정보 userEmail : ${userEmail}, name : ${name}`);
+                console.log(`입력한 정보 userEmail : ${userEmail}`); //name : ${name}`);
                 return res.status(500);
             }
             if (user.user_mail === undefined) {
                 console.log('user정보가 없대 408 ', user);
-                console.log(`입력한 정보 userEmail : ${userEmail}, name : ${name}`);
+                console.log(`입력한 정보 userEmail : ${userEmail}`); //, name : ${name}`);
                 return res.status(500);
             }
 
@@ -877,11 +877,11 @@ const addTeamProject = (req, res) => {
 }
 
 const updateTeamProject = (req, res) => {
-    const { ProjectName, Status, Users, StartMonth, StartWeek, EndMonth, EndWeek, ProopsMM, Manager, Site } = req.body;
+    const { ProjectName, OldProjectName, Status, Users, StartMonth, StartWeek, EndMonth, EndWeek, ProopsMM, Manager, Site } = req.body;
     console.log("진행 : ", req.body);
-    const sql = `UPDATE TeamProject SET Status = ?, Users = ?, Manager = ?, ProopsMM = ?, StartMonth = ?, StartWeek = ?, EndMonth = ?, EndWeek = ? WHERE ProjectName = ? AND Site = ?`;
+    const sql = `UPDATE TeamProject SET ProjectName = ?, Status = ?, Users = ?, Manager = ?, ProopsMM = ?, StartMonth = ?, StartWeek = ?, EndMonth = ?, EndWeek = ? WHERE ProjectName = ? AND Site = ?`;
 
-    db.run(sql, [Status, Users, Manager, ProopsMM, StartMonth, StartWeek, EndMonth, EndWeek, ProjectName, Site], (err, results) => {
+    db.run(sql, [ProjectName,Status, Users, Manager, ProopsMM, StartMonth, StartWeek, EndMonth, EndWeek, OldProjectName, Site], (err, results) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });

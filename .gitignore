@@ -133,4 +133,5 @@ build/
 .pnp.*
 
 # .gitignore
+DB/
 db.sqlite3
