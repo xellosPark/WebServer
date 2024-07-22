@@ -733,7 +733,17 @@ const updateGitPagePath = (req, res) => {
 const loadProjectInfo = (req, res) => {
     const { ProjectName, Site } = req.query; //body를 사용하지 않을때는 이렇게
     console.log(req.query);
-    if (ProjectName === "All") {
+    if (ProjectName === "All" && Site === "All") {
+        const sql = `SELECT * FROM ProjectInfo`;
+        db.all(sql, (err, results) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+            }
+            console.log('results', results);
+            res.status(200).json(results);
+        });
+    } else if (ProjectName === "All") {
         const sql = `SELECT * FROM ProjectInfo WHERE Site = ?`;
         db.all(sql, Site, (err, results) => {
             if (err) {
