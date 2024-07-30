@@ -243,17 +243,62 @@ const dbconnect = (req, res) => {
 };
 
 const boardProject = (req, res) => {
-    const { Name } = req.query; //body를 사용하지 않을때는 이렇게
-    //console.log(req.query);
-    const sql = 'SELECT * FROM ProjectInfo WHERE View = 1 AND Users LIKE?';
-    const values = [`%${Name}%`];
-    db.all(sql, values, (err, results) => {
-        if (err) {
-            return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
-        }
-        //console.log(results);
-        res.status(200).json(results);
-    });
+    const { Name, ID, Manager, Site } = req.query; //body를 사용하지 않을때는 이렇게
+    console.log(req.query);
+    let result = [];
+    if (Manager === '1') {
+        console.log('1 들어옴');
+        const sql = 'SELECT * FROM ProjectInfo WHERE Site = ?';//View = 1 AND Users LIKE ?';
+        const values = [`%${Name}%`];
+
+        db.all(sql, Site, (err, results) => {
+            if (err) {
+                return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+            }
+            
+            const subSql = 'SELECT ProjectView FROM UserInfo WHERE user_mail = ? AND name = ?';
+            const subValues = [ID, Name];
+            
+            db.get(subSql, subValues, (err, userResult) => {
+                if (err) {
+                    return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+                }
+
+                const userData = userResult ? userResult.ProjectView.split(', ') : [];
+                console.log('userInfo 데이터1', userResult, userData, results.length, userData.length);
+                const difference = results.length - userData.length;
+                if (difference > 0) {
+                    // 차이만큼 '1'을 split의 앞에 추가
+                    for (let i = 0; i < difference; i++) {
+                        userData.unshift('1');
+                    }
+                }
+                console.log('userInfo 데이터2', userResult, userData);
+                const reverseData = [...userData].reverse();
+                console.log('userInfo 데이터', userResult, userData, reverseData);
+                //console.log('results', results);
+                const filterResults = results.filter((project, index) => {
+                    //console.log('체크', userData[index], index, userData[index] === '1' ? 'true' : 'false');
+                    if (reverseData[index] === '1')
+                        return project;
+                });
+                
+                res.status(200).json(filterResults);
+            });
+        });
+    } else {
+        const sql = 'SELECT * FROM ProjectInfo WHERE View = 1 AND Users LIKE?';
+        const values = [`%${Name}%`];
+
+        db.all(sql, values, (err, results) => {
+            if (err) {
+                return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
+            }
+            //console.log(results);
+            res.status(200).json(results);
+        });
+    }
+    
 };
 
 const boardLoad = async (req, res) => {
@@ -461,7 +506,7 @@ const getUserInfo = (req, res) => {
     //console.log('getuserinfo', userEmail, name );
     //    console.log(`userinfo :  ${userEmail}, ${name}`);
     if (userEmail !== 'All') {
-        const sql = 'SELECT * FROM UserInfo WHERE user_mail = ?';// AND name = ?';
+        const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
         db.get(sql, [userEmail, name], (err, user) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
@@ -482,11 +527,11 @@ const getUserInfo = (req, res) => {
                 return res.status(500);
             }
 
-            const userData = { email: user.user_mail, name: user.name, team: user.team, rank: user.rank, impProject: user.importProject, custom: user.Custom, manager: user.Manager };
+            const userData = { email: user.user_mail, name: user.name, team: user.team, rank: user.rank, impProject: user.importProject, custom: user.Custom, manager: user.Manager, view : user.ProjectView };
             return res.status(200).json({ userData });
         });
     } else {
-        const sql = 'SELECT name, rank FROM UserInfo WHERE team = ?';
+        const sql = 'SELECT * FROM UserInfo WHERE Site = ?'; //name, rank
         db.all(sql, [name], (err, user) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
@@ -766,17 +811,27 @@ const loadProjectInfo = (req, res) => {
 }
 
 const updateUserInfo = (req, res) => {
-    const { Email, Custom } = req.body;
+    const { Email, Custom, ProjectView, Filed } = req.body;
     console.log('업데이트 631', req.body);
-    const sql = `UPDATE UserInfo SET Custom = ? WHERE user_mail = ?`;
-    db.run(sql, [Custom, Email], (err) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).json({ error: err.message });
-        }
-        return res.status(200).json({ message: 'Successfully Update updateUserInfo Custom' });
-    });
-
+    if (Filed === 'ProjectView') {
+        const sql = `UPDATE UserInfo SET ProjectView = ? WHERE user_mail = ?`;
+            db.run(sql, [ProjectView, Email], (err) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ error: err.message });
+            }
+            return res.status(200).json({ message: 'Successfully Update updateUserInfo View' });
+        });
+    } else {
+        const sql = `UPDATE UserInfo SET Custom = ? WHERE user_mail = ?`;
+            db.run(sql, [Custom, Email], (err) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ error: err.message });
+            }
+            return res.status(200).json({ message: 'Successfully Update updateUserInfo Custom' });
+        });
+    }
 };
 
 const updateStep = (req, res) => {
