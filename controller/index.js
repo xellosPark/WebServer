@@ -263,26 +263,32 @@ const boardProject = (req, res) => {
                 if (err) {
                     return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
                 }
-
-                const userData = userResult ? userResult.ProjectView.split(', ') : [];
-                console.log('userInfo 데이터1', userResult, userData, results.length, userData.length);
-                const difference = results.length - userData.length;
-                if (difference > 0) {
-                    // 차이만큼 '1'을 split의 앞에 추가
-                    for (let i = 0; i < difference; i++) {
-                        userData.unshift('1');
+                let filterResults = '';
+                //console.log('userInfo 데이터1', userResult);
+                if (userResult.ProjectView === null) {
+                    filterResults = results;
+                    //console.log('userInfo 데이터', filterResults);
+                } else {
+                    userData = userResult ? userResult.ProjectView.split(', ') : [];
+                    //console.log('userInfo 데이터11', userResult, userData, results.length, userData.length);
+                    const difference = results.length - userData.length;
+                    if (difference > 0) {
+                        // 차이만큼 '1'을 split의 앞에 추가
+                        for (let i = 0; i < difference; i++) {
+                            userData.unshift('1');
+                        }
                     }
+
+                    //console.log('userInfo 데이터2', userResult, userData);
+                    const reverseData = [...userData].reverse();
+                    //console.log('userInfo 데이터', userResult, userData, filterResults);
+                    //console.log('results', results);
+                    filterResults = results.filter((project, index) => {
+                        //console.log('체크', userData[index], index, userData[index] === '1' ? 'true' : 'false');
+                        if (reverseData[index] === '1')
+                            return project;
+                    });
                 }
-                console.log('userInfo 데이터2', userResult, userData);
-                const reverseData = [...userData].reverse();
-                console.log('userInfo 데이터', userResult, userData, reverseData);
-                //console.log('results', results);
-                const filterResults = results.filter((project, index) => {
-                    //console.log('체크', userData[index], index, userData[index] === '1' ? 'true' : 'false');
-                    if (reverseData[index] === '1')
-                        return project;
-                });
-                
                 res.status(200).json(filterResults);
             });
         });
@@ -506,9 +512,11 @@ const getUserInfo = (req, res) => {
     //console.log('getuserinfo', userEmail, name );
     //    console.log(`userinfo :  ${userEmail}, ${name}`);
     if (userEmail !== 'All') {
+        //console.log('여기 들어오나?');
         const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
         db.get(sql, [userEmail, name], (err, user) => {
             if (err) {
+                //console.log('왜 에러 메세지가...', err.message);
                 return res.status(500).json({ error: err.message });
             }
 
@@ -942,11 +950,11 @@ const addTeamProject = (req, res) => {
 }
 
 const updateTeamProject = (req, res) => {
-    const { ProjectName, OldProjectName, Status, Users, StartMonth, StartWeek, EndMonth, EndWeek, ProopsMM, Manager, Site } = req.body;
+    const { ProjectName, OldProjectName, Status, Users, StartMonth, StartWeek, EndMonth, EndWeek, ProopsMM, Manager, Comment, Site } = req.body;
     console.log("진행 : ", req.body);
-    const sql = `UPDATE TeamProject SET ProjectName = ?, Status = ?, Users = ?, Manager = ?, ProopsMM = ?, StartMonth = ?, StartWeek = ?, EndMonth = ?, EndWeek = ? WHERE ProjectName = ? AND Site = ?`;
+    const sql = `UPDATE TeamProject SET ProjectName = ?, Status = ?, Users = ?, Manager = ?, ProopsMM = ?, StartMonth = ?, StartWeek = ?, EndMonth = ?, EndWeek = ?, Comment = ? WHERE ProjectName = ? AND Site = ?`;
 
-    db.run(sql, [ProjectName,Status, Users, Manager, ProopsMM, StartMonth, StartWeek, EndMonth, EndWeek, OldProjectName, Site], (err, results) => {
+    db.run(sql, [ProjectName, Status, Users, Manager, ProopsMM, StartMonth, StartWeek, EndMonth, EndWeek, Comment, OldProjectName, Site], (err, results) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });
