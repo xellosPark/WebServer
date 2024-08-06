@@ -283,7 +283,7 @@ app.post('/uploadFile', upload.single('file'), (req, res) => {
 app.get('/download/:filename', (req, res) => {
   const filename = req.params.filename;
   const projectName = req.query.Project;
-  console.log(filename);
+  console.log('filename',filename);
   // 파일이 저장된 디렉토리 경로, 실제 경로에 맞게 수정해야 합니다.
   const directoryPath = path.join(__dirname, '../WebServerFiles', projectName);
   const filePath = path.join(directoryPath, filename);

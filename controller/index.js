@@ -133,11 +133,11 @@ const accessToken = (req, res) => {
     try {
         //const token = req.cookies.accessToken;
         const token = req.headers['accessToken'];
-        const { email, password } = req.body;
+        const { id, password } = req.body;
         //const data = jwt.verify(token, process.env.ACCESS_SECRET);
         //console.log(`accessToken`, req.email);
         const sql = 'SELECT * FROM UserInfo WHERE id = ?';
-        db.get(sql, [req.email], (err, row) => {
+        db.get(sql, [req.id], (err, row) => {
             if (err) {
                 return res.status(500).json({ error: '사용자 조회 중 오류가 발생했습니다.' });
             }
@@ -146,7 +146,7 @@ const accessToken = (req, res) => {
                 return res.status(401).json({ error: '사용자를 찾을 수 없습니다.' });
             }
             const { user_password, ...others } = row;
-            console.log(`${row}`);
+            //console.log(`${row}`);
             return res.status(200).json(row);
         });
         //const {pw, ...others} = userData;
@@ -244,10 +244,10 @@ const dbconnect = (req, res) => {
 
 const boardProject = (req, res) => {
     const { Name, ID, Manager, Site } = req.query; //body를 사용하지 않을때는 이렇게
-    console.log(req.query);
+    //console.log(req.query);
     let result = [];
     if (Manager === '1') {
-        console.log('1 들어옴');
+        //console.log('1 들어옴');
         const sql = 'SELECT * FROM ProjectInfo WHERE Site = ?';//View = 1 AND Users LIKE ?';
         const values = [`%${Name}%`];
 
@@ -463,7 +463,7 @@ const updateDateList = (req, res) => {
 
 const deleteToDoList = (req, res) => {
     const { Index } = req.body;
-    console.log(`${Index}`);
+    console.log(`deleteToDoList ${Index}`);
     if (!Index) {
         return res.status(400).json({ message: 'Index is required' });
     }
@@ -782,7 +782,7 @@ const updateGitPath = (req, res) => {
 
 const updateGitPagePath = (req, res) => {
     const { url, ProjectName } = req.body;
-    console.log('업데이트', req.body);
+    //console.log('업데이트', req.body);
     const sql = `UPDATE ProjectInfo SET GitPageURL = ? WHERE ProjectName = ?`;
     db.run(sql, [url, ProjectName], (err) => {
         if (err) {
@@ -795,7 +795,7 @@ const updateGitPagePath = (req, res) => {
 
 const loadProjectInfo = (req, res) => {
     const { ProjectName, Site } = req.query; //body를 사용하지 않을때는 이렇게
-    console.log(req.query);
+    //console.log(req.query);
     if (ProjectName === "All" && Site === "All") {
         const sql = `SELECT * FROM ProjectInfo`;
         db.all(sql, (err, results) => {
@@ -1005,7 +1005,7 @@ const deleteTeamProject = (req, res) => {
 
 const getTeamProject = (req, res) => {
     const { Site } = req.query;
-    console.log("getTeamProject 진행 : ", req.query);
+    //console.log("getTeamProject 진행 : ", req.query);
     const sql = 'SELECT * FROM TeamProject WHERE Site = ?';
     db.all(sql, Site, (err, results) => {
         if (err) {
