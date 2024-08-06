@@ -13,12 +13,12 @@ const SECRET_KEY = crypto.randomBytes(64).toString('hex');
 
 const login = (req, res, next) => {
     const isProduction = process.env.NODE_ENV === 'production';
-    const { email, password } = req.body;
-    console.log('로그인 진행', email, password);
+    const { Id, Password } = req.body;
+    console.log('로그인 진행', Id, Password);
 
     // 데이터베이스에서 사용자 조회 (가정)
-    const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND phon_number = ?';
-    db.get(sql, [email, password], (err, user) => {
+    const sql = 'SELECT * FROM UserInfo WHERE id = ? AND password = ?';
+    db.get(sql, [Id, Password], (err, user) => {
         if (err) {
             console.error('사용자 조회 중 오류 발생:', err);
             return res.status(400).json({ error: '사용자 조회 중 오류가 발생했습니다.' });
@@ -34,9 +34,9 @@ const login = (req, res, next) => {
 
         // 비밀번호 검증 로직 필요 (생략)
 
-        const sql = `UPDATE UserInfo SET RefreshToken = '' WHERE user_mail = ?`;
+        const sql = `UPDATE UserInfo SET RefreshToken = '' WHERE id = ?`;
         // DB에 데이터 삽입
-        db.run(sql, [email], (err) => {
+        db.run(sql, [Id], (err) => {
             if (err) {
                 // 에러 처리
                 console.log(`실페 ${err}`);
@@ -49,7 +49,7 @@ const login = (req, res, next) => {
         try {
             const accessToken = jwt.sign(
                 {
-                    id: user.user_mail,
+                    id: user.id,
                     name: user.name
                 },
                 ACCESS_SECRET,
@@ -58,7 +58,7 @@ const login = (req, res, next) => {
 
             const refreshToken = jwt.sign(
                 {
-                    id: user.user_mail,
+                    id: user.id,
                     name: user.name
                 },
                 REFRESH_SECRET,
@@ -84,9 +84,9 @@ const login = (req, res, next) => {
             //console.log('login refresh추가', global.refreshTokens);
             //console.log(`db에 넣기전 refreshToken 확인 ${refreshToken}`);
 
-            const sql = `UPDATE UserInfo SET RefreshToken = ? WHERE user_mail = ?`;
+            const sql = `UPDATE UserInfo SET RefreshToken = ? WHERE id = ?`;
             // DB에 데이터 삽입
-            db.run(sql, [refreshToken, email], (err) => {
+            db.run(sql, [refreshToken, Id], (err) => {
                 if (err) {
                     // 에러 처리
                     console.log(err);
@@ -96,7 +96,7 @@ const login = (req, res, next) => {
                 // 성공
             });
 
-            const userData = { email: user.user_mail, name: user.name, team: user.team, rank: user.rank };
+            const userData = { id: user.id, name: user.name, department: user.department, rank: user.rank };
             // 쿠키에 토큰 저장 및 응답 전송
             //console.log('accessToken 생성');
             //res.cookie('accessToken', accessToken, { httpOnly:true, secure: isProduction, sameSite: "None" });
@@ -135,8 +135,8 @@ const accessToken = (req, res) => {
         const token = req.headers['accessToken'];
         const { email, password } = req.body;
         //const data = jwt.verify(token, process.env.ACCESS_SECRET);
-        console.log(`accessToken`);
-        const sql = 'SELECT * FROM UserInfo WHERE user_mail = ?';
+        //console.log(`accessToken`, req.email);
+        const sql = 'SELECT * FROM UserInfo WHERE id = ?';
         db.get(sql, [req.email], (err, row) => {
             if (err) {
                 return res.status(500).json({ error: '사용자 조회 중 오류가 발생했습니다.' });
@@ -256,7 +256,7 @@ const boardProject = (req, res) => {
                 return res.status(500).json({ message: '데이터 불러오는데 오류가 발생했습니다.', err });
             }
             
-            const subSql = 'SELECT ProjectView FROM UserInfo WHERE user_mail = ? AND name = ?';
+            const subSql = 'SELECT ProjectView FROM UserInfo WHERE id = ? AND name = ?';
             const subValues = [ID, Name];
             
             db.get(subSql, subValues, (err, userResult) => {
@@ -508,17 +508,27 @@ const UpdateUserImpPrj = (req, res) => {
 
 const getUserInfo = (req, res) => {
     //console.log('getuserinfo 들어옴');
-    const { userEmail, name } = req.query;
+    const { id, name } = req.query;
     //console.log('getuserinfo', userEmail, name );
     //    console.log(`userinfo :  ${userEmail}, ${name}`);
-    if (userEmail !== 'All') {
-        //console.log('여기 들어오나?');
-        const sql = 'SELECT * FROM UserInfo WHERE user_mail = ? AND name = ?';
-        db.get(sql, [userEmail, name], (err, user) => {
+    if (id === 'All' && name === 'All') {
+        const sql = 'SELECT * FROM UserInfo'; //name, rank
+        db.all(sql, (err, user) => {
             if (err) {
-                //console.log('왜 에러 메세지가...', err.message);
                 return res.status(500).json({ error: err.message });
             }
+            //const userData = { name: user.name };
+            //console.log('userData', user);
+            return res.status(200).json(user);
+        });
+    } else if (id !== 'All') {
+        //console.log('여기 들어오나?');
+        const sql = 'SELECT * FROM UserInfo WHERE id = ? AND name = ?';
+        db.get(sql, [id, name], (err, user) => {
+            if (err) {
+                console.log('왜 에러 메세지가...', err.message);
+                return res.status(500).json({ error: err.message });
+            }   
 
             if (!user) {
                 return res.status(404).json('user not found');
@@ -526,16 +536,16 @@ const getUserInfo = (req, res) => {
 
             if (user === undefined) {
                 console.log('user정보가 없대 403 ', user);
-                console.log(`입력한 정보 userEmail : ${userEmail}`); //name : ${name}`);
+                console.log(`입력한 정보 id : ${userEmail}`); //name : ${name}`);
                 return res.status(500);
             }
-            if (user.user_mail === undefined) {
+            if (user.id === undefined) {
                 console.log('user정보가 없대 408 ', user);
-                console.log(`입력한 정보 userEmail : ${userEmail}`); //, name : ${name}`);
+                console.log(`입력한 정보 id : ${userEmail}`); //, name : ${name}`);
                 return res.status(500);
             }
 
-            const userData = { email: user.user_mail, name: user.name, team: user.team, rank: user.rank, impProject: user.importProject, custom: user.Custom, manager: user.Manager, view : user.ProjectView };
+            const userData = { id: user.id, name: user.name, department: user.department, rank: user.rank, impProject: user.importProject, custom: user.Custom, manager: user.Manager, view : user.ProjectView };
             return res.status(200).json({ userData });
         });
     } else {
@@ -819,11 +829,20 @@ const loadProjectInfo = (req, res) => {
 }
 
 const updateUserInfo = (req, res) => {
-    const { Email, Custom, ProjectView, Filed } = req.body;
-    console.log('업데이트 631', req.body);
-    if (Filed === 'ProjectView') {
-        const sql = `UPDATE UserInfo SET ProjectView = ? WHERE user_mail = ?`;
-            db.run(sql, [ProjectView, Email], (err) => {
+    const { ID, Name, Birthday, Department, Rank, JoinDate, Email, Custom, ProjectView, Filed } = req.body;
+    //console.log('업데이트 631', req.body);
+    if (Filed === 'ProjectView' && Filed !== undefined) {
+        const sql = `UPDATE UserInfo SET ProjectView = ? WHERE id = ?`;
+            db.run(sql, [ProjectView, ID], (err) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ error: err.message });
+            }
+            return res.status(200).json({ message: 'Successfully Update updateUserInfo View' });
+        });
+    } else if (Filed !== 'ProjectView' && Filed !== undefined) {
+        const sql = `UPDATE UserInfo SET name = ?, birthday = ?, department = ?, rank = ?, join_date = ?, email = ? WHERE id = ? AND Site = ?`;
+            db.run(sql, [Name, Birthday, Department, Rank, JoinDate, Email, ID, Filed], (err) => {
             if (err) {
                 console.log(err);
                 return res.status(500).json({ error: err.message });
@@ -831,8 +850,9 @@ const updateUserInfo = (req, res) => {
             return res.status(200).json({ message: 'Successfully Update updateUserInfo View' });
         });
     } else {
-        const sql = `UPDATE UserInfo SET Custom = ? WHERE user_mail = ?`;
-            db.run(sql, [Custom, Email], (err) => {
+
+        const sql = `UPDATE UserInfo SET Custom = ? WHERE id = ?`;
+            db.run(sql, [Custom, ID], (err) => {
             if (err) {
                 console.log(err);
                 return res.status(500).json({ error: err.message });
@@ -996,6 +1016,22 @@ const getTeamProject = (req, res) => {
     });
 }
 
+const addUserInfo = (req, res) => {
+    const { ID, Name, Password, Department, Email, Rank, JoinDate, Birthday, Site } = req.body;
+    const sql = `INSERT INTO UserInfo (ID, password, name, birthday, department, rank, email, join_date, Manager, Site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    db.run(sql, [ID, Password, Name, Birthday, Department, Rank, Email, JoinDate, 0, Site], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({ error: err.message });
+        }
+        //console.log("진행 완료");
+        return res.json({
+            message: 'Success',
+        });
+    });
+}
+
 module.exports = {
     login,
     accessToken,
@@ -1034,4 +1070,5 @@ module.exports = {
     updateTeamProject,
     deleteTeamProject,
     getTeamProject,
+    addUserInfo,
 }
