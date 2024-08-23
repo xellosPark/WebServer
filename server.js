@@ -463,7 +463,7 @@ app.use(express.static(path.join(__dirname, 'build')));
 // });
 
 // 디바이스 타입에 따라 다른 경로 제공
-app.get('/*', function(req, res) {
+app.get('*', function(req, res) {
   //const userAgent = req.headers['user-agent'].toLowerCase();
   //const mobileRegex = /mobile|android|touch|webos|iphone|ipad|ipod/i;
   //if (mobileRegex.test(userAgent)) {

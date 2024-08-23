@@ -1006,9 +1006,11 @@ const deleteTeamProject = (req, res) => {
 const getTeamProject = (req, res) => {
     const { Site } = req.query;
     //console.log("getTeamProject 진행 : ", req.query);
-    const sql = 'SELECT * FROM TeamProject WHERE Site = ?';
+    const sql = 'SELECT * FROM TeamProject WHERE Site = ? ORDER bY `INDEX` DESC';
     db.all(sql, Site, (err, results) => {
         if (err) {
+            //console.log('eee', err.message);
+            
             return res.status(500).json({ error: err.message });
         }
         //console.log("getTeamProject 진행 완료", results);

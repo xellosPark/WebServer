@@ -1,0 +1,17 @@
+# 베이스 이미지로 Node.js 사용
+FROM node:20
+
+# 앱 디렉토리 생성
+WORKDIR /app
+
+# 코드 복사
+COPY . /app
+
+# 의존성 설치
+RUN npm install
+
+# 애플리케이션 실행
+CMD ["npm", "start"]
+
+# 컨테이너가 노출할 포트
+EXPOSE 7878
