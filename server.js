@@ -58,6 +58,7 @@ const {
     updateTeamProject,
     deleteTeamProject,
     getTeamProject,
+    existTeamProject,
     addUserInfo,
 } = require('./controller/index');
 
@@ -241,6 +242,7 @@ app.post('/addTeamProject', addTeamProject);
 app.post('/updateTeamProject', updateTeamProject);
 app.post('/deleteTeamProject', deleteTeamProject);
 app.get('/getTeamProject', getTeamProject);
+app.get('/existTeamProject', existTeamProject);
 app.post('/addUserInfo', addUserInfo);
 
 app.post('/logout', logout);

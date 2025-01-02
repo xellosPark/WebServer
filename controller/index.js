@@ -987,11 +987,11 @@ const updateTeamProject = (req, res) => {
 }
 
 const deleteTeamProject = (req, res) => {
-    const { ProjectName, Site } = req.body;
+    const { ProjectName, Site, ProjectDate } = req.body;
     console.log("진행 : ", req.body);
-    const sql = 'DELETE FROM TeamProject WHERE ProjectName = ? AND Site = ?';
+    const sql = 'DELETE FROM TeamProject WHERE ProjectName = ? AND Site = ? AND Date = ?';
 
-    db.run(sql, [ProjectName, Site], (err) => {
+    db.run(sql, [ProjectName, Site, ProjectDate], (err) => {
         if (err) {
             console.log(err);
             return res.status(500).json({ error: err.message });
@@ -1014,6 +1014,21 @@ const getTeamProject = (req, res) => {
             return res.status(500).json({ error: err.message });
         }
         //console.log("getTeamProject 진행 완료", results);
+        res.status(200).json(results);
+    });
+}
+
+const existTeamProject = (req, res) => {
+    const { Site, Year } = req.query;
+    //console.log("existTeamProject 진행 : ", req.query);
+    const sql = 'SELECT * FROM TeamProject WHERE Site = ? AND strftime(\'%Y\', date) = ? ORDER bY `INDEX` DESC';
+    db.all(sql, [Site, Year], (err, results) => {
+        if (err) {
+            //console.log('eee', err.message);
+            
+            return res.status(500).json({ error: err.message });
+        }
+        //console.log("existTeamProject 진행 완료", results);
         res.status(200).json(results);
     });
 }
@@ -1072,5 +1087,6 @@ module.exports = {
     updateTeamProject,
     deleteTeamProject,
     getTeamProject,
+    existTeamProject,
     addUserInfo,
 }
